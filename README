@@ -1,0 +1,26 @@
+For the Zymphonic Wormhole (2014): http://recreationallightandmagic.com/category/zymphonicwormhole/
+
+==Teensy as Arduino ==
+
+Super easy (i.e. package-ified) arduino install...except but D'oh https://www.pjrc.com/teensy/td_download.html#linux_issues : "Teensyduino only works with Arduino from www.arduino.cc. The modified version provided by Ubuntu is not (yet) supported."
+So, download and install "the hard way", which is downloaded and tar xzvf-ing it.
+On to the teensy, download the udev file and copy to the place instructed.  Download the installer and run it (selecting installation of the octoWS2811 library).
+
+==Kinect and processing==
+
+It seems like processing will self-install (Import Library > Add Library ...)  all the support one needs for OpenNI, but maybe downloading and running install per the instructions at https://code.google.com/p/simple-openni/wiki/Installation was necessary.
+I had to follow fix in https://code.google.com/p/simple-openni/issues/detail?id=79 (install Boost and copy .so file) to get around a 32 vs. 64 bit issue
+
+==Teensy and OctoWS2811 in general==
+
+Per https://www.pjrc.com/teensy/td_libs_OctoWS2811.html we can hope to run about 4000 LEDs off each teensy (so, one should suffice).
+
+Massive debt of gratitude to Paul Stoffregen, and following instructions at https://www.pjrc.com/teensy/td_libs_OctoWS2811.html .  Once complete, full control of basically unlimited number of LEDs at video refresh rates from Processing.  No arduino coding necessary (other than static configuring teensies).
+
+==Processing and eclipse==
+
+Using eclipse for processing amounts to installing eclipse, and importing jar and native libraries.
+
+
+
+
