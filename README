@@ -21,6 +21,15 @@ Massive debt of gratitude to Paul Stoffregen, and following instructions at http
 
 Using eclipse for processing amounts to installing eclipse, and importing jar and native libraries.
 
+Importing jar and native libraries amounts to import > FileSystem > ...
+
+... then selecting a necessary jar.  As of this writing, the necessary jars are:
+core.jar
+serial.jar
+jna.jar
+jssc.jar
+...whose absence will (I'm almost certain) be reflected as errors within eclipse until imported.
+
 ==Eclipse and SimpleOpenNI==
 
 One notable exception to the above is getting SimpleOpenNI working with eclipse.  The standard method of importing filesystem blah blah doesn't work.  Instead, you need to follow the directions at http://www.cs.smith.edu/~emendelo/classes/fall13/csc260/hw/simpleOpenNI.html which I'm copying in below (just in case they go away...it took me several hours of failed attempts before I found them):
