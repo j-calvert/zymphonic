@@ -12,7 +12,7 @@ package com.recreationallightandmagic.zymphonic.processing;
  */
 
 import processing.core.PApplet;
-import SimpleOpenNI.*;
+import SimpleOpenNI.SimpleOpenNI;
 
 public class DepthImage extends PApplet {
 	private static final long serialVersionUID = 1L;
