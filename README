@@ -21,6 +21,26 @@ Massive debt of gratitude to Paul Stoffregen, and following instructions at http
 
 Using eclipse for processing amounts to installing eclipse, and importing jar and native libraries.
 
+==Eclipse and SimpleOpenNI==
+
+One notable exception to the above is getting SimpleOpenNI working with eclipse.  The standard method of importing filesystem blah blah doesn't work.  Instead, you need to follow the directions at http://www.cs.smith.edu/~emendelo/classes/fall13/csc260/hw/simpleOpenNI.html which I'm copying in below (just in case they go away...it took me several hours of failed attempts before I found them):
+
+Using SimpleOpenNI with Eclipse
+
+Create a User Library in Eclipse
+In Eclipse, got to Preferences.../Java/Build Path/User Libraries
+Click the New... button and enter SimpleOpenNI as the library name.
+Select the SimpleOpenNI library and press the Add external JARs.. button.
+Select SimpleOpenNI.jar in the SimpleOpenNI/library directory
+Double click on SimpleOpenNI.jar's "Native Library Location:" (you may need to expand SimpleOpenNI library and SimpleOpenNI.jar by clicking on the little triangles)
+Click External Folder... and select the same library folder that contains SimpleOpenNI.jar
+Add the library to your project's buildpath.
+Right Click on the project.
+Choose BuildPath/Add Libraries...
+Click on User Libraries and then the Next button.
+Check off "SimpleOpenNI"
+Click Finish
+
 
 
 

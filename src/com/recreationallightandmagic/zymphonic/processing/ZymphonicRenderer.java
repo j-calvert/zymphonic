@@ -1,22 +1,26 @@
-/*  Butched from OctoWS2811 movie2serial.pde - Transmit video data to 1 or more
-Teensy 3.0 boards running OctoWS2811 VideoDisplay.ino
-http://www.pjrc.com/teensy/td_libs_OctoWS2811.html
-Copyright (c) 2013 Paul Stoffregen, PJRC.COM, LLC
- */
+package com.recreationallightandmagic.zymphonic.processing;
 
-//To configure this program, edit the following sections:
-//
-//1: change myMovie to open a video file of your choice    ;-)
-//
-//2: edit the serialConfigure() lines in setup() for your
-//   serial device names (Mac, Linux) or COM ports (Windows)
-//
-//3: if your LED strips have unusual color configuration,
-//   edit colorWiring().  Nearly all strips have GRB wiring,
-//   so normally you can leave this as-is.
-//
-//4: if playing 50 or 60 Hz progressive video (or faster),
-//   edit framerate in movieEvent().
+/**  Butchered from OctoWS2811 movie2serial.pde 
+ * 
+ * Transmit video data to 1 or more
+ Teensy 3.0 boards running OctoWS2811 VideoDisplay.ino
+ http://www.pjrc.com/teensy/td_libs_OctoWS2811.html
+ Copyright (c) 2013 Paul Stoffregen, PJRC.COM, LLC
+
+ To configure this program, edit the following sections:
+
+ 1: change myMovie to open a video file of your choice    ;-)
+
+ 2: edit the serialConfigure() lines in setup() for your
+ serial device names (Mac, Linux) or COM ports (Windows)
+
+ 3: if your LED strips have unusual color configuration,
+ edit colorWiring().  Nearly all strips have GRB wiring,
+ so normally you can leave this as-is.
+
+ 4: if playing 50 or 60 Hz progressive video (or faster),
+ edit framerate in movieEvent().
+ */
 
 import java.awt.Rectangle;
 import java.util.Arrays;
@@ -198,24 +202,29 @@ public class ZymphonicRenderer extends PApplet {
 
 		Random rand = new Random();
 		PImage movieImage = new PImage(240, 8);
-		
+
 		for (int x = 0; x < 240; x++) {
-			for (int y = 0; y < 8; y++) {		
-				movieImage.set(x, y, rand.nextInt(1));
+			for (int y = 0; y < 8; y++) {
+
+				movieImage.set(
+						x,
+						y,
+						this.color(rand.nextInt(255), rand.nextInt(255),
+								rand.nextInt(255)));
 			}
 		}
 		// then try to show what was most recently sent to the LEDs
 		// by displaying all the images for each port.
 		movieEvent(movieImage);
 		// Uncomment for seizure inducing strobe effect
-//		for (int x = 0; x < 240; x++) {
-//			for (int y = 0; y < 8; y++) {		
-//				movieImage.set(x, y, 0);
-//			}
-//		}
-//		// then try to show what was most recently sent to the LEDs
-//		// by displaying all the images for each port.
-//		movieEvent(movieImage);
+		// for (int x = 0; x < 240; x++) {
+		// for (int y = 0; y < 8; y++) {
+		// movieImage.set(x, y, 0);
+		// }
+		// }
+		// // then try to show what was most recently sent to the LEDs
+		// // by displaying all the images for each port.
+		// movieEvent(movieImage);
 		for (int i = 0; i < numPorts; i++) {
 			// compute the intended size of the entire LED array
 			int xsize = percentageInverse(ledImage[i].width, ledArea[i].width);
