@@ -1,5 +1,5 @@
 package com.recreationallightandmagic.zymphonic.processing;
-
+ 	 
 import processing.core.PApplet;
 import processing.core.PVector;
 import SimpleOpenNI.SimpleOpenNI;
@@ -8,490 +8,406 @@ import ddf.minim.AudioPlayer;
 import ddf.minim.AudioSample;
 import ddf.minim.Minim;
 import ddf.minim.signals.SineWave;
-import ddf.minim.ugens.ADSR;
-import ddf.minim.ugens.Delay;
-import ddf.minim.ugens.Instrument;
-import ddf.minim.ugens.Oscil;
-import ddf.minim.ugens.Waves;
-
-public class UserSounds extends PApplet {
-	private static final long serialVersionUID = 1L;
-
-	SimpleOpenNI kinect;
-	static int[] userClr;
-	PVector com = new PVector();
-	PVector com2d = new PVector();
-
-	personBlob[] personBlobs;
-	int[] personKtoZ;
-
-	int frame = 0;
-
-	//to be integrated into personblob
-	double[] lastdistance = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-	double[] lastxdistance = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-	AudioPlayer auFear, auPositivity, auHum, auBeat, auSet, auSonic, auComet,
-			auThunder, auDrumJack;
-	AudioSample auKick, auCello;
-	AudioOutput out;
-	Oscil wave;
-	SineWave sine;
-	int userId_z;
-
-	Minim minim;
-
-	public void setup() {
-		userClr = new int[] { color(255, 0, 0), color(0, 255, 0),
-				color(0, 0, 255), color(255, 255, 0), color(255, 0, 255),
-				color(0, 255, 255) };
-		size(640, 480);
-		minim = new Minim(this);
-		auFear = loadMinimFile("Fear.wav");
-		auPositivity = loadMinimFile("Positivity.wav");
-		auHum = loadMinimFile("hum2.wav");
-		auKick = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Kick1.wav");
-		auCello = minim.loadSample("/home/shelly/workspace/zymphonic/" + "cello2.wav");
-		auBeat = loadMinimFile("beat.wav");
-		auSet = loadMinimFile("setunium.wav");
-		auSonic = loadMinimFile("sonicboom.wav");
-		auComet = loadMinimFile("comet.wav");
-		auThunder = loadMinimFile("thunder.wav");
-		auDrumJack = loadMinimFile("DrumJack.wav");
-		auHum.loop();
-		auKick.trigger();
-		auBeat.loop();
-		out = minim.getLineOut();
-		userId_z = 0;
-		int maxblobs = 100;
-		personBlobs = new personBlob[maxblobs];
-		personKtoZ = new int[maxblobs];
-
-		//synthesizer hello world
-		out.setTempo(60);
-
-		out.playNote(0, 1, new SineInstrument(30));
-		out.playNote(1, 1, new SineInstrument(110));
-		out.playNote(2, 1, new SineInstrument(220));
-		out.playNote(3, 1, new SineInstrument(440));
-		out.playNote(4, 1, new SineInstrument(540));
-		wave = new Oscil(440, 0.5f, Waves.SINE);
-		wave.patch(out);
-
-		kinect = new SimpleOpenNI(this);
-		if (kinect.isInit() == false) {
-			println("Can't init SimpleOpenNI, maybe the camera is not connected!");
-			exit();
-			return;
-		}
-
-		// enable depthMap generation
-		kinect.enableDepth();
-
-		// enable skeleton generation for all joints
-		kinect.enableUser();
-
-		background(200, 0, 0);
-
-		stroke(0, 0, 255);
-		strokeWeight(3);
-		smooth();
-	}
-
-	private AudioPlayer loadMinimFile(String filename) {
-		return minim.loadFile("/home/shelly/workspace/zymphonic/" + filename);
-	}
-
-	public void draw() {
-		// if (!auHum.isPlaying()){
-		// auHum.rewind();
-		// }
-		// auHum.play();
-
-		// update the cam
-		frame = frame + 1;
-
-		kinect.update();
-
-		// draw depthImageMap
-		// image(context.depthImage(),0,0);
-		image(kinect.userImage(), 0, 0);
-
-		// draw the skeleton if it's available
-		int[] userList = kinect.getUsers();
-
-		for (int i = 0; i < userId_z; i++) {
-			
-			//check for each z user, if an active kinect user 
-			if (personBlobs[i].puserId != 99) {
-
-				int currentId = personBlobs[i].puserId;
-				
-				//skeleton stuff -- good for debugging and fun but we don't need
-				if (kinect.isTrackingSkeleton(currentId)) {
-					stroke(personBlobs[currentId].personClr);
-					// stroke(userClr[ (userList[i] - 1) % userClr.length ] );
-					drawSkeleton(currentId);
-
-					PVector rightHand = new PVector();
-					float confidence = kinect.getJointPositionSkeleton(
-							currentId, SimpleOpenNI.SKEL_LEFT_HAND, rightHand);
-					PVector convertedRightHand = new PVector();
-					kinect.convertRealWorldToProjective(rightHand,
-							convertedRightHand);
-					float ellipseSize = map(convertedRightHand.z, 400, 2000,
-							100, 10);
-					fill(255, 0, 0);
-					ellipse(convertedRightHand.x, convertedRightHand.y,
-							ellipseSize, ellipseSize);
-
-					PVector leftHand = new PVector();
-					float confidence3 = kinect.getJointPositionSkeleton(
-							currentId, SimpleOpenNI.SKEL_RIGHT_HAND, leftHand);
-					PVector convertedLeftHand = new PVector();
-					kinect.convertRealWorldToProjective(leftHand,
-							convertedLeftHand);
-					float ellipseSize3 = map(convertedLeftHand.z, 400, 2000,
-							100, 10);
-					fill(255, 0, 0);
-					ellipse(convertedLeftHand.x, convertedLeftHand.y,
-							ellipseSize3, ellipseSize3);
-
-					PVector torso = new PVector();
-					float confidence2 = kinect.getJointPositionSkeleton(
-							currentId, SimpleOpenNI.SKEL_TORSO, torso);
-					PVector convertedTorso = new PVector();
-					kinect.convertRealWorldToProjective(torso, convertedTorso);
-					float ellipseSize2 = map(convertedTorso.z, 400, 2000, 100,
-							10);
-					fill(255, 0, 0);
-					ellipse(convertedTorso.x, convertedTorso.y, ellipseSize2,
-							ellipseSize2);
-
-				}
-
-				// draw the center of mass
-				if (kinect.getCoM(currentId, com)) {
-
-					kinect.convertRealWorldToProjective(com, com2d);
-					stroke(100, 255, 0);
-					strokeWeight(1);
-					beginShape(LINES);
-					vertex(com2d.x, com2d.y - 5);
-					vertex(com2d.x, com2d.y + 5);
-
-					vertex(com2d.x - 5, com2d.y);
-					vertex(com2d.x + 5, com2d.y);
-					endShape();
-
-					fill(0, 255, 100);
-					text(Integer.toString(currentId), com2d.x, com2d.y);
-
-					//should be right
-					double inches = com.z / 25.4;
-					
-					//probably wrong?
-					double xinches = com.x / 25.4;
-
-					// TODO add y
-					//TODO add com to frame history of personBlob
-					
-					println(currentId + " at " + inches + " inches");
-
-					playUserSound(currentId, xinches, inches);
-				}
-			}// if personBlob is an active user
-		}// for each personBLob
-
-		stroke(255);
-		strokeWeight(1);
-
-		// draw the waveform of the output
-		for (int i = 0; i < out.bufferSize() - 1; i++) {
-			line(i, 50 - out.left.get(i) * 50, i + 1,
-					50 - out.left.get(i + 1) * 50);
-			line(i, 150 - out.right.get(i) * 50, i + 1,
-					150 - out.right.get(i + 1) * 50);
-		}
-
-		// draw the waveform we are using in the oscillator
-		stroke(128, 0, 0);
-		strokeWeight(4);
-		for (int i = 0; i < width - 1; ++i) {
-			point(i,
-					(float) (height / 2 - (height * 0.49)
-							* wave.getWaveform().value((float) i / width)));
-		}
-
-	}
-
-	void playUserSound(int userId, double xinches, double inches) {
-		// println("in play user sound");
-
-		// println("playing user " + userId + " sound,  " + distance + " inches"
-		// + " last distance " + lastdistance[userId]);
-
-		if (!auFear.isPlaying()) {
-			auFear.rewind();
-		}
-		auFear.play();
-
-		float freq = map((float) inches, 30, 200, 220, 480);
-
-		//todo convert lastdistance into person class
-		float movement = abs( (float) (inches - lastdistance[userId]));
-		float movementx = abs((float) (xinches - lastxdistance[userId]));
-	
-		if (lastdistance[userId] < 40 &&  inches > 40) {
-			if (!auDrumJack.isPlaying()) {
-				auDrumJack.rewind();
-			}
-			auDrumJack.play();
-		}
-		if (lastdistance[userId] < 50 &&  inches > 50) {
-			if (!auComet.isPlaying()) {
-				auComet.rewind();
-			}
-			auComet.play();
-		}
-		if (lastdistance[userId] < 100 &&  inches > 100) {
-			if (!auThunder.isPlaying()) {
-				auThunder.rewind();
-			}
-			auThunder.play();
-		}
-
-		if (movement > 6 || movementx > 6) {
-			// println("playing user " + userId + " sound  " + distance +
-			// " inches" + " last distance " + lastdistance[userId]);
-			// auKick.trigger();
-			// auCello.trigger();
-			out.playNote(0, 2, new SineInstrument(freq));
-
-			lastdistance[userId] =  inches;
-			lastxdistance[userId] = xinches;
-		}
-
-		// auKick.trigger();
-
-		// map(distance, 20, 140, 0, 1);
-		// wave.setAmplitude( amp );
-
-		// println(freq);
-		// wave.setFrequency( freq );
-
-	}
-
-	void stopUserSound(int userId) {
-		auFear.pause();
-	}
-
-	public void mouseMoved() {
-		// usually when setting the amplitude and frequency of an Oscil
-		// you will want to patch something to the amplitude and frequency
-		// inputs
-		// but this is a quick and easy way to turn the screen into
-		// an x-y control for them.
-
+	 
+	 public class UserSounds extends PApplet {
+		 	private static final long serialVersionUID = 1L;
 		
-		///from the sample we can remove  for testing (oscillator) without having to move around
-		float amp = map(mouseY, 0, height, 1, 0);
-		wave.setAmplitude(amp);
+		 	SimpleOpenNI kinect;
 
-		float freq = map(mouseX, 0, width, 110, 880);
-		wave.setFrequency(freq);
-	}
+		 	static int[] userClr;
+		 	PVector com = new PVector();
+		 	PVector com2d = new PVector();
 
-	// draw the skeleton with the selected joints
-	void drawSkeleton(int userId) {
-		// to get the 3d joint data
-		/*
-		 * PVector jointPos = new PVector();
-		 * context.getJointPositionSkeleton(userId
-		 * ,SimpleOpenNI.SKEL_NECK,jointPos); println(jointPos);
-		 */
+		 	personBlob[] personBlobs;
+		 	int[] personKtoZ;
+		 	
+		 	int frame = 0;
+		 	int userId_z;
+	 		int maxblobs = 100;
 
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK);
+	 		//inches above which, assume on zipline
+	 		float ziplineyinches = 14 ;
+	 		
+	 		//zinches at which trigger zipline sound effect *starts*:
+	 		float ziplinetrigger = 20;
+	 		//how many triggers in sound space...(notreally needed):
+	 		int ztriggers = 20;
+	 		//inches where the end sound happens:
+	 		int thundertrigger = 50;
+	 		//spacing in between each sound pad in inches:
+	 		float ztriggersinches = 12;
+	 		
+		 	Minim minim;
+	 		
+		 	AudioSample auKick, auCello;
+		 	AudioSample[] piano = new AudioSample[6];
+		 	AudioSample[] bass = new AudioSample[6];
+		 	AudioPlayer[] pads = new AudioPlayer[4];
+		 	AudioPlayer[] ends = new AudioPlayer[4];
+		 	AudioPlayer[] zips = new AudioPlayer[8];
+		 	AudioPlayer auThunder;
+		 	 		
+		 	public void setup() {
+		 		
+		 		println("starting...");
+		 		userClr = new int[] { color(255, 0, 0), color(0, 255, 0),
+		 				color(0, 0, 255), color(255, 255, 0), color(255, 0, 255),
+		 				color(0, 255, 255) };
+		 		size(640, 480);
+	
+		 		userId_z = 0;
 
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_NECK,
-				SimpleOpenNI.SKEL_LEFT_SHOULDER);
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER,
-				SimpleOpenNI.SKEL_LEFT_ELBOW);
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_ELBOW,
-				SimpleOpenNI.SKEL_LEFT_HAND);
+		 		personBlobs = new personBlob[maxblobs];
+		 		personKtoZ = new int[maxblobs];
+		 		
+		 		kinect = new SimpleOpenNI(this);
+		 		if (kinect.isInit() == false) {
+		 			println("Can't init SimpleOpenNI, maybe the camera is not connected!");
+		 			exit();
+		 			return;
+		 		}
 
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_NECK,
-				SimpleOpenNI.SKEL_RIGHT_SHOULDER);
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER,
-				SimpleOpenNI.SKEL_RIGHT_ELBOW);
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW,
-				SimpleOpenNI.SKEL_RIGHT_HAND);
+		 		kinect.setMirror(true);
+		 		
+		 		// enable depthMap generation
+		 		kinect.enableDepth();
 
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER,
-				SimpleOpenNI.SKEL_TORSO);
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER,
-				SimpleOpenNI.SKEL_TORSO);
+		 		// enable skeleton generation for all joints
+		 		kinect.enableUser();
 
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_TORSO,
-				SimpleOpenNI.SKEL_LEFT_HIP);
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HIP,
-				SimpleOpenNI.SKEL_LEFT_KNEE);
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_KNEE,
-				SimpleOpenNI.SKEL_LEFT_FOOT);
+		 		background(200, 0, 0);
 
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_TORSO,
-				SimpleOpenNI.SKEL_RIGHT_HIP);
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HIP,
-				SimpleOpenNI.SKEL_RIGHT_KNEE);
-		kinect.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_KNEE,
-				SimpleOpenNI.SKEL_RIGHT_FOOT);
-	}
+		 		stroke(0, 0, 255);
+		 		strokeWeight(3);
+		 		smooth();
+		 		
+		 		minim = new Minim(this);
+		 		minim.stop();
+		 		
+		 		auKick = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Kick1.wav");
+		 		auCello = minim.loadSample("/home/shelly/workspace/zymphonic/" + "cello2.wav");
 
-	// -----------------------------------------------------------------
-	// SimpleOpenNI events
+		 		piano[0] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano1_A1.wav");
+		 		piano[1] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano2_C2.wav");
+		 		piano[2] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano3_E2.wav");
+		 		piano[3] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano4_F2.wav");
+		 		piano[4] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano5_G2.wav");
+		 		piano[5] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano6_A2.wav");
 
-	void onNewUser(SimpleOpenNI curContext, int userId) {
-		println("onNewUser - userId: " + userId);
-		println("\tstart tracking skeleton");
+		 		bass[0] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass1_A1.wav");
+		 		bass[1] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass2_C2.wav");
+		 		bass[2] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass3_E2.wav");
+		 		bass[3] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass4_F2.wav");
+		 		bass[4] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass5_G2.wav");
+		 		bass[5] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass6_A2.wav");
+		 
+		 		pads[0] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Pad1_A1.wav");
+		 		pads[1] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Pad2_C2.wav");
+		 		pads[2] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Pad3_E2.wav");
+		 		pads[3] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Pad4_G2.wav");
 
-		if (!auSet.isPlaying()) {
-			auSet.rewind();
-		}
-		auSet.play();
+		 		ends[0] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "End_A.wav");
+		 		ends[1] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "End_C.wav");
+		 		ends[2] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "End_E.wav");
+		 		ends[3] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "End_G.wav");
 
-		curContext.startTrackingSkeleton(userId);
+		 		zips[0] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline1_A.wav");
+		 		zips[1] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline1_C.wav");
+		 		zips[2] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline1_E.wav");
+		 		zips[3] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline1_G.wav");
+		 		zips[4] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline2_A.wav");
+		 		zips[5] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline2_C.wav");
+		 		zips[6] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline2_E.wav");
+		 		zips[7] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline2_G.wav");
 
-		personBlob tempBlob = new personBlob(userId, userId_z);
+		 		auThunder = minim.loadFile("/home/shelly/workspace/zymphonic/" + "thunder.wav");
+		 		
+		 		auCello.trigger();
+		 		auKick.trigger();
+		 		pads[0].play();
+		 		
+		 		println("end setup");
+		 	}
 
-		personBlobs[userId_z] = tempBlob;
+		 	public void draw() {	 		
+		 		
+		 		kinect.update();
 
-		// println("array is " + personBlobs.length);
+		 		image(kinect.userImage(), 0, 0);
 
-		personKtoZ[userId] = userId_z;
+		 		// draw the skeleton if it's available
+		 		int[] userList = kinect.getUsers();
 
-		userId_z = userId_z + 1;
+		 		//println("user count " + userList.length);
+		 		
+		 		for (int i = 0; i < userId_z; i++) {	 			
+		 		
+		 			//check for each z user, if an active kinect user 
+		 			if (personBlobs[i].puserId != 99) {
 
-		// println("new person in array: " + personBlobs[userId_z].userId);
+		 				int currentId = personBlobs[i].puserId;
+		 				boolean stillactive = false;
+		 				
+		 			    for (int h = 0; h < userList.length; h++)
+		 			    {
+		 			    	if (userList[h] == currentId) {
+		 			    		stillactive = true;
+		 			    		}
+		 			    }
+		 				
+		 				if (stillactive == true) {
+		 				/*
+		 				if (kinect.isTrackingSkeleton(currentId)) {
+		 					stroke(personBlobs[currentId].personClr);
+		 				}*/
 
-		/* println("new ktoz in array: " + userId); */
+		 				// draw the center of mass
+		 				if (kinect.getCoM(currentId, com)) {
+		 					
+		 					println(currentId + " at " + com.x);
 
-		/* println("new person: " + personKtoZ[userId]); */
-		// userId_z = userId_z + 1;
-		println("userId_z" + userId_z);
+		 					kinect.convertRealWorldToProjective(com, com2d);
+		 					stroke(100, 255, 0);
+		 					strokeWeight(1);
+		 					beginShape(LINES);
+		 					vertex(com2d.x, com2d.y - 5);
+		 					vertex(com2d.x, com2d.y + 5);
 
-	}
+		 					vertex(com2d.x - 5, com2d.y);
+		 					vertex(com2d.x + 5, com2d.y);
+		 					endShape();
 
-	void onLostUser(SimpleOpenNI curContext, int userId) {
-		if (!auSonic.isPlaying()) {
-			auSonic.rewind();
-		}
-		auSonic.play();
+		 					fill(0, 255, 100);
+		 					text(Integer.toString(currentId), com2d.x, com2d.y);
 
-		println("onLostUser - userId: " + userId);
-		stopUserSound(userId);
+		 					//should be right
+		 					double zinches = com.z / 25.4;
+		 					
+		 					double xinches = com.x / 25.4;
+		 					
+		 					double yinches = com.y / 25.4;
 
-		int pblobz = personKtoZ[userId];
-		personBlobs[pblobz].puserId = 99;
+		 					if (xinches != 0)
+		 					{
+		 						playUserSound(personBlobs[i], xinches, yinches, zinches);
+		 					}
+		 				  }
+		 				}//if still active in userlist
+		 			}// if personBlob is still an active user
+		 		}// for each personBLob
 
-	}
+		 		frame = frame + 1;
 
-	void onVisibleUser(SimpleOpenNI curContext, int userId) {
-		// println("onVisibleUser - userId: " + userId);
-	}
+		 	}
 
-	//mostly here for testing stuff; irrelevant
-	public void keyPressed() {
-		switch (key) {
-		case ' ':
-			kinect.setMirror(!kinect.mirror());
-			break;
-		case 'f':
-			if (!auFear.isPlaying()) {
-				auFear.rewind();
-			}
-			auFear.play();
-			println("pressed t");
-			break;
-		case 'p':
-			if (!auPositivity.isPlaying()) {
-				auPositivity.rewind();
-			}
-			auPositivity.play();
-			println("pressed y");
-			break;
-		case '1':
-			wave.setWaveform(Waves.SINE);
-			break;
-		case '2':
-			wave.setWaveform(Waves.TRIANGLE);
-			break;
-		case '3':
-			wave.setWaveform(Waves.SAW);
-			break;
-		case '4':
-			wave.setWaveform(Waves.SQUARE);
-			break;
-		case '5':
-			wave.setWaveform(Waves.QUARTERPULSE);
-			break;
-		}
-	}
+		 	void playUserSound(personBlob thisPerson, double xinches, double yinches, double zinches) {
+		 //		 println("in play user sound");
 
-	//need for closing sound
-	public void stop() {
-		auFear.close();
-		auPositivity.close();
-		auHum.close();
-		auKick.close();
-		minim.stop();
+		 		float movementz = abs( (float) (zinches - thisPerson.lastzinches));
+		 		float movementx = abs((float) (xinches - thisPerson.lastxinches));		 	
+		 		float movementy = abs((float) (yinches - thisPerson.lastyinches));		 	
 
-		super.stop();
+//		 		double zspace = ztriggersinches * ztriggers;
+		 		
+		 		double currentztrigger = Math.floor(zinches / ztriggersinches);
+		 		
+		 		println ("yinches " + yinches + " zinches: " + zinches + " currentztrigger: " + currentztrigger + " lastztrigger: " + thisPerson.lastztrigger);
+		 		
+		 		if (currentztrigger != thisPerson.lastztrigger){
+		 		 //  auKick.trigger();
+		 			
+		 			if (yinches > ziplineyinches) {
+		 				if (thisPerson.lastztrigger < ziplinetrigger & zinches > ziplinetrigger){
+		 			 		int zip = (int)Math.floor((currentztrigger + thisPerson.puserId) % 8);
+		 			 		
+		 			 		if (!zips[zip].isPlaying()) {
+		 		 				zips[zip].rewind();
+		 		 			}	
+		 					zips[zip].play();
+		 				    }
+		 				
+		 				if (thisPerson.lastztrigger < thundertrigger & zinches > thundertrigger){
 
-	}
+		 		 		   int end = (int)Math.floor((currentztrigger + thisPerson.puserId) % 5);
+		 		 		   
+		 		 		   if (end < 4){
+			 					if (!ends[end].isPlaying())
+			 					{
+			 						ends[end].rewind();
+			 					}
+			 					ends[end].play();	 						 		 		   
+		 		 		   }
+		 		 		   if (end == 4){
+		 		 		   
+		 					if (!auThunder.isPlaying())
+		 					{
+		 						auThunder.rewind();
+		 					}
+		 					auThunder.play();	 				
+		 			       }//occasional thunder
+		 				}//y above zipline line
+		 			
+		 			if (yinches < ziplineyinches) {
+			 		
+			 		   int key = (int)Math.floor((currentztrigger + thisPerson.puserId) % 6);
+	
+			 		   if (xinches < 0) {
+			 			   println("piano key: " + key);
+			 			   piano[key].trigger();
+			 		   }
+			 		   if (xinches > 0) {
+			 			   println("bass key: " + key);
+			 			   bass[key].trigger();
+			 		   }
+			 		   
+			 		   thisPerson.lastztrigger = currentztrigger;
+		 		}
+		 		
+		 		if (movementz > 6) {
 
-	static class personBlob {
+		 		    // auKick.trigger();
 
-		int puserId = 99;
-		int puserId_z;
-		PVector[] frameLocs = new PVector[1000];
-		int personClr;
-		long timestamp = System.currentTimeMillis();
+		 	//		thisPerson.lastzinches = zinches;
+		 		}		 		
 
-		personBlob(int tempuserId, int tempuserId_z) {
-			puserId = tempuserId;
-			puserId_z = tempuserId_z;
-			// stroke(userClr[ (userList[i] - 1) % userClr.length ] );
+		 		if (movementx > 6) {
 
-			println("tempuserId " + tempuserId + "tempuserId_z " + tempuserId_z);
-			personClr = userClr[(tempuserId - 1) % userClr.length];
-			// println(personClr);
-			println("in new person blob constructor " + puserId + " userId_z: "
-					+ puserId_z);
-		}
-	}
+		 		    // auCello.trigger();
 
-	//from thre sample code for the synthesizer
-	class SineInstrument implements Instrument {
-		Oscil sineWave;
-		ADSR envelope;
-		Delay delay;
+		 			println("xinches " + xinches);
+		 			
+		 			thisPerson.lastxinches = xinches;
+		 			
+		 		}
+		 	  }//lower than zip trigger, on the ground
+		 	}//if person is not in the same place
+		 	}//end playersound
 
-		SineInstrument(float frequency) {
-			sineWave = new Oscil(frequency, 0.5f, Waves.SINE);
-			envelope = new ADSR(10.0f, 0.001f); // max amplitude (unknown unit),
-												// attack speed in seconds
-			sineWave.patch(envelope);
-		}
 
-		public void noteOn(float duration) {
-			envelope.noteOn();
-			envelope.patch(out);
-		}
+		 	public void mouseMoved() {
+		 		
+		 	}
 
-		public void noteOff() {
-			envelope.unpatchAfterRelease(out);
-			envelope.noteOff();
-		}
-	}
+		 	public void onNewUser(SimpleOpenNI curContext, int userId) {
+		 		
+		 		println("onNewUser - userId: " + userId + " frame: " + frame);
+		 	
+		 		curContext.startTrackingSkeleton(userId);
+ 		
+		 		personBlob tempBlob = new personBlob(userId, userId_z);
 
-}
+		 		personBlobs[userId_z] = tempBlob;
+
+		 		personKtoZ[userId] = userId_z;
+
+		 		userId_z = userId_z + 1;
+		 		
+		 		if (userId_z > (maxblobs - 2)) userId_z = 0;
+		 		
+		 		int currentpad = (int)Math.floor(userId % 4);
+
+		 		if (!pads[currentpad].isPlaying()) {
+	 				pads[currentpad].rewind();
+	 			}		 		
+		 		pads[currentpad].play();
+
+		 	}
+
+		 	public void onLostUser(SimpleOpenNI curContext, int userId) {
+
+		 		println("onLostUser - userId: " + userId);
+		 	
+		 		int pblobz = personKtoZ[userId];
+		 		personBlobs[pblobz].puserId = 99;
+
+		 	}
+
+		 	public void onVisibleUser(SimpleOpenNI curContext, int userId) {
+		 		// println("onVisibleUser - userId: " + userId);
+		 	}
+
+		 	//mostly here for testing stuff; irrelevant
+		 	public void keyPressed() {
+		 		switch (key) {
+		 		case ' ':
+		 		case 'p':
+		 		case '1':
+		 		}
+		 	}
+
+		 	//need for closing sound
+		 	public void stop() {
+		 		
+		 		auKick.close();
+		 		auCello.close();
+		 		
+		 		piano[0].close();
+		 		piano[1].close();
+		 		piano[2].close();
+		 		piano[3].close();
+		 		piano[4].close();
+		 		piano[5].close();
+
+		 		bass[0].close();
+		 		bass[1].close();
+		 		bass[2].close();
+		 		bass[3].close();
+		 		bass[4].close();
+		 		bass[5].close();
+
+		 		pads[0].close();
+		 		pads[1].close();
+		 		pads[2].close();
+		 		pads[3].close();
+
+		 		ends[0].close();
+		 		ends[1].close();
+		 		ends[2].close();
+		 		ends[3].close();
+		 		
+		 		zips[0].close();
+		 		zips[1].close();
+		 		zips[2].close();
+		 		zips[3].close();
+		 		zips[4].close();
+		 		zips[5].close();
+		 		zips[6].close();
+		 		zips[7].close();
+		
+		 		auThunder.close();
+		 		
+		 		minim.stop();
+
+		 		super.stop();
+
+		 	}
+
+		 	static class personBlob {
+
+		 		int puserId = 99;
+		 		int puserId_z;
+		 		PVector[] frameLocs = new PVector[1000];
+		 		int personClr;
+		 		long timestamp = System.currentTimeMillis();
+		 		double lastzinches = 0;
+		 		double lastxinches = 0;
+		 		double lastyinches = 0;
+		 		double lastztrigger = 0;
+		 		
+
+		 		personBlob(int tempuserId, int tempuserId_z) {
+		 			
+		 			System.out.println("testing");
+		 			
+		 			println("creating new person");
+		 			
+		 			puserId = tempuserId;
+		 			puserId_z = tempuserId_z;
+
+		 			println("tempuserId " + tempuserId + "tempuserId_z " + tempuserId_z);
+		 			personClr = userClr[(tempuserId - 1) % userClr.length];
+		 			println("in new person blob constructor " + puserId + " userId_z: "
+		 					+ puserId_z);
+		 		}
+		 	}
+	 }
