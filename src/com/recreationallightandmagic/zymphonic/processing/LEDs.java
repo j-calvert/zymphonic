@@ -24,17 +24,12 @@ package com.recreationallightandmagic.zymphonic.processing;
 
 import java.awt.Rectangle;
 import java.util.Arrays;
-import java.util.Random;
 
 import processing.core.PApplet;
 import processing.core.PImage;
 import processing.serial.Serial;
 
-public class ZymphonicRenderer extends PApplet {
-	private static final long serialVersionUID = 1L;
-	// Movie myMovie = new Movie(this, "/home/jcalvert/Downloads/bird.avi");
-	// Doesn't quite work...
-
+public class LEDs {
 	float gamma = 1.7f;
 
 	int numPorts = 0; // the number of serial ports in use
@@ -50,25 +45,22 @@ public class ZymphonicRenderer extends PApplet {
 	int errorCount = 0;
 	float framerate = 0;
 
-	public void setup() {
+	public void setup(PApplet applet) {
 		String[] list = Serial.list();
 		// delay(20);
 		System.out.println("Serial Ports List:");
 		System.out.println(Arrays.toString(list));
-		serialConfigure("/dev/ttyACM0"); // change these to your port names
+		serialConfigure(applet, "/dev/ttyACM0"); // change these to your port
+													// names
 		// serialConfigure("/dev/ttyACM1");
 		if (errorCount > 0)
-			exit();
+			throw new RuntimeException("Got error setting up Lights.  Check that port is right for teensy.");
 		for (int i = 0; i < 256; i++) {
 			gammatable[i] = (int) (Math.pow((float) i / 255.0, gamma) * 255.0 + 0.5);
 		}
-		size(480, 400); // create the window
-
-		// myMovie.loop(); // start the movie :-)
 	}
 
-	// movieEvent runs for each new frame of movie data
-	void movieEvent(PImage m) {
+	void renderLights(PImage m) {
 		// read the movie's next frame (from if m were declared as a Movie)
 		// m.read();
 
@@ -155,86 +147,49 @@ public class ZymphonicRenderer extends PApplet {
 	}
 
 	// ask a Teensy board for its LED configuration, and set up the info for it.
-	void serialConfigure(String portName) {
+	void serialConfigure(PApplet applet, String portName) {
 		if (numPorts >= maxPorts) {
-			println("too many serial ports, please increase maxPorts");
+			System.out
+					.println("too many serial ports, please increase maxPorts");
 			errorCount++;
 			return;
 		}
 		try {
-			ledSerial[numPorts] = new Serial(this, portName);
+			ledSerial[numPorts] = new Serial(applet, portName);
 			if (ledSerial[numPorts] == null)
 				throw new NullPointerException();
 			ledSerial[numPorts].write('?');
 		} catch (Throwable e) {
-			println("Serial port " + portName
+			System.out.println("Serial port " + portName
 					+ " does not exist or is non-functional");
 			errorCount++;
 			return;
 		}
-		delay(50);
+		applet.delay(50);
 		String line = ledSerial[numPorts].readStringUntil(10);
 		if (line == null) {
-			println("Serial port " + portName + " is not responding.");
-			println("Is it really a Teensy 3.0 running VideoDisplay?");
+			System.out.println("Serial port " + portName
+					+ " is not responding.");
+			System.out
+					.println("Is it really a Teensy 3.0 running VideoDisplay?");
 			errorCount++;
 			return;
 		}
 		String param[] = line.split(",");
 		if (param.length != 12) {
-			println("Error: port " + portName
+			System.out.println("Error: port " + portName
 					+ " did not respond to LED config query");
 			errorCount++;
 			return;
 		}
 		// only store the info and increase numPorts if Teensy responds properly
 		ledImage[numPorts] = new PImage(Integer.parseInt(param[0]),
-				Integer.parseInt(param[1]), RGB);
+				Integer.parseInt(param[1]), PApplet.RGB);
 		ledArea[numPorts] = new Rectangle(Integer.parseInt(param[5]),
 				Integer.parseInt(param[6]), Integer.parseInt(param[7]),
 				Integer.parseInt(param[8]));
 		ledLayout[numPorts] = (Integer.parseInt(param[5]) == 0);
 		numPorts++;
-	}
-
-	// draw runs every time the screen is redrawn - show the movie...
-	public void draw() {
-
-		Random rand = new Random();
-		PImage movieImage = new PImage(240, 8);
-
-		for (int x = 0; x < 240; x++) {
-			for (int y = 0; y < 8; y++) {
-
-				movieImage.set(
-						x,
-						y,
-						this.color(rand.nextInt(255), rand.nextInt(255),
-								rand.nextInt(255)));
-			}
-		}
-		// then try to show what was most recently sent to the LEDs
-		// by displaying all the images for each port.
-		movieEvent(movieImage);
-		// Uncomment for seizure inducing strobe effect
-		// for (int x = 0; x < 240; x++) {
-		// for (int y = 0; y < 8; y++) {
-		// movieImage.set(x, y, 0);
-		// }
-		// }
-		// // then try to show what was most recently sent to the LEDs
-		// // by displaying all the images for each port.
-		// movieEvent(movieImage);
-		for (int i = 0; i < numPorts; i++) {
-			// compute the intended size of the entire LED array
-			int xsize = percentageInverse(ledImage[i].width, ledArea[i].width);
-			int ysize = percentageInverse(ledImage[i].height, ledArea[i].height);
-			// computer this image's position within it
-			int xloc = percentage(xsize, ledArea[i].x);
-			int yloc = percentage(ysize, ledArea[i].y);
-			// show what should appear on the LEDs
-			image(ledImage[i], 240 - xsize / 2 + xloc, 10 + yloc);
-		}
 	}
 
 	// scale a number by a percentage, from 0 to 100

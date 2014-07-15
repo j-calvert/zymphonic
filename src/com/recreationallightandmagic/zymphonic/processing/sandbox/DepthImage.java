@@ -1,4 +1,4 @@
-package com.recreationallightandmagic.zymphonic.processing;
+package com.recreationallightandmagic.zymphonic.processing.sandbox;
 
 /* --------------------------------------------------------------------------
  * SimpleOpenNI DepthImage Test

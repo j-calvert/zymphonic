@@ -1,14 +1,11 @@
-package com.recreationallightandmagic.zymphonic.processing;
+package com.recreationallightandmagic.zymphonic.processing.sandbox;
 
-import processing.core.PApplet;	
-
+import processing.core.PApplet;
 import processing.core.PVector;
 import SimpleOpenNI.SimpleOpenNI;
-import ddf.minim.AudioOutput;
 import ddf.minim.AudioPlayer;
 import ddf.minim.AudioSample;
 import ddf.minim.Minim;
-import ddf.minim.signals.SineWave;
 	 
 	 public class UserSounds extends PApplet {
 		 	private static final long serialVersionUID = 1L;
@@ -213,7 +210,7 @@ import ddf.minim.signals.SineWave;
 
 		 		float movementz = abs( (float) (zinches - thisPerson.lastzinches));
 		 		float movementx = abs((float) (xinches - thisPerson.lastxinches));		 	
-		 		float movementy = abs((float) (yinches - thisPerson.lastyinches));		 	
+//		 		float movementy = abs((float) (yinches - thisPerson.lastyinches));		 	
 		 		
 		 		double currentztrigger = Math.floor(zinches / ztriggersinches);
 		 				 		
