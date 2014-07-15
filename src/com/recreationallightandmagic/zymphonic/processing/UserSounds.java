@@ -1,6 +1,7 @@
 package com.recreationallightandmagic.zymphonic.processing;
- 	 
-import processing.core.PApplet;
+
+import processing.core.PApplet;	
+
 import processing.core.PVector;
 import SimpleOpenNI.SimpleOpenNI;
 import ddf.minim.AudioOutput;
@@ -11,7 +12,7 @@ import ddf.minim.signals.SineWave;
 	 
 	 public class UserSounds extends PApplet {
 		 	private static final long serialVersionUID = 1L;
-		
+					
 		 	SimpleOpenNI kinect;
 
 		 	static int[] userClr;
@@ -26,14 +27,14 @@ import ddf.minim.signals.SineWave;
 	 		int maxblobs = 100;
 
 	 		//inches above which, assume on zipline
-	 		float ziplineyinches = 14 ;
+	 		float ziplineyinches = 25;
 	 		
 	 		//zinches at which trigger zipline sound effect *starts*:
 	 		float ziplinetrigger = 20;
 	 		//how many triggers in sound space...(notreally needed):
 	 		int ztriggers = 20;
 	 		//inches where the end sound happens:
-	 		int thundertrigger = 50;
+	 		int thundertrigger = 70;
 	 		//spacing in between each sound pad in inches:
 	 		float ztriggersinches = 12;
 	 		
@@ -82,48 +83,55 @@ import ddf.minim.signals.SineWave;
 		 		smooth();
 		 		
 		 		minim = new Minim(this);
-		 		minim.stop();
 		 		
-		 		auKick = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Kick1.wav");
-		 		auCello = minim.loadSample("/home/shelly/workspace/zymphonic/" + "cello2.wav");
+		 		auKick = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Kick1.wav", 6048);
+		 		auCello = minim.loadSample("/home/shelly/workspace/zymphonic/" + "cello2.wav", 8048);
 
-		 		piano[0] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano1_A1.wav");
-		 		piano[1] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano2_C2.wav");
-		 		piano[2] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano3_E2.wav");
-		 		piano[3] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano4_F2.wav");
-		 		piano[4] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano5_G2.wav");
-		 		piano[5] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano6_A2.wav");
+		 		piano[0] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano1_A1.wav", 6048);
+		 		piano[1] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano2_C2.wav", 6048);
+		 		piano[2] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano3_E2.wav", 6048);
+		 		piano[3] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano4_F2.wav", 6048);
+		 		piano[4] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano5_G2.wav", 6048);
+		 		piano[5] = minim.loadSample("/home/shelly/workspace/zymphonic/" + "Piano6_A2.wav", 6048);
 
-		 		bass[0] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass1_A1.wav");
-		 		bass[1] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass2_C2.wav");
-		 		bass[2] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass3_E2.wav");
-		 		bass[3] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass4_F2.wav");
-		 		bass[4] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass5_G2.wav");
-		 		bass[5] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass6_A2.wav");
+		 		bass[0] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass1_A1.wav", 6048);
+		 		bass[1] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass2_C2.wav", 6048);
+		 		bass[2] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass3_E2.wav", 6048);
+		 		bass[3] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass4_F2.wav", 6048);
+		 		bass[4] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass5_G2.wav", 6048);
+		 		bass[5] =  minim.loadSample("/home/shelly/workspace/zymphonic/" + "Bass6_A2.wav", 6048);
 		 
-		 		pads[0] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Pad1_A1.wav");
-		 		pads[1] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Pad2_C2.wav");
-		 		pads[2] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Pad3_E2.wav");
-		 		pads[3] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Pad4_G2.wav");
+		 		pads[0] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Pad1_A1.wav", 66048);
+		 		pads[1] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Pad2_C2.wav", 66048);
+		 		pads[2] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Pad3_E2.wav", 66048);
+		 		pads[3] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Pad4_G2.wav", 66048);
 
-		 		ends[0] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "End_A.wav");
-		 		ends[1] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "End_C.wav");
-		 		ends[2] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "End_E.wav");
-		 		ends[3] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "End_G.wav");
+		 		
+		 		ends[0] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "End_A.wav", 66048);
+		 		ends[1] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "End_C.wav", 66048);
+		 		ends[2] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "End_E.wav", 66048);
+		 		ends[3] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "End_G.wav", 66048);
 
-		 		zips[0] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline1_A.wav");
-		 		zips[1] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline1_C.wav");
+		 		
+		 		/*
+		 		zips[0] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline1_A_1.mp3", 2048);
+		 	*/
+		 		
+		 		//zips[1] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline1_C.wav");
+		 		/*
 		 		zips[2] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline1_E.wav");
 		 		zips[3] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline1_G.wav");
+		 		/*
 		 		zips[4] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline2_A.wav");
 		 		zips[5] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline2_C.wav");
 		 		zips[6] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline2_E.wav");
 		 		zips[7] =  minim.loadFile("/home/shelly/workspace/zymphonic/" + "Zipline2_G.wav");
-
-		 		auThunder = minim.loadFile("/home/shelly/workspace/zymphonic/" + "thunder.wav");
+*/
+		 		
+		 		auThunder = minim.loadFile("/home/shelly/workspace/zymphonic/" + "thunder.wav", 2048);
 		 		
 		 		auCello.trigger();
-		 		auKick.trigger();
+        		auKick.trigger();
 		 		pads[0].play();
 		 		
 		 		println("end setup");
@@ -206,83 +214,90 @@ import ddf.minim.signals.SineWave;
 		 		float movementz = abs( (float) (zinches - thisPerson.lastzinches));
 		 		float movementx = abs((float) (xinches - thisPerson.lastxinches));		 	
 		 		float movementy = abs((float) (yinches - thisPerson.lastyinches));		 	
-
-//		 		double zspace = ztriggersinches * ztriggers;
 		 		
 		 		double currentztrigger = Math.floor(zinches / ztriggersinches);
-		 		
-		 		println ("yinches " + yinches + " zinches: " + zinches + " currentztrigger: " + currentztrigger + " lastztrigger: " + thisPerson.lastztrigger);
-		 		
-		 		if (currentztrigger != thisPerson.lastztrigger){
-		 		 //  auKick.trigger();
+		 				 		
+		 		if (currentztrigger != thisPerson.lastztrigger)
+		 		   {
+			 		println ("yinches " + yinches + " zinches: " + zinches + " currentztrigger: " + currentztrigger + " lastztrigger: " + thisPerson.lastztrigger);
+
+		 		   //auKick.trigger();
 		 			
-		 			if (yinches > ziplineyinches) {
-		 				if (thisPerson.lastztrigger < ziplinetrigger & zinches > ziplinetrigger){
-		 			 		int zip = (int)Math.floor((currentztrigger + thisPerson.puserId) % 8);
+		 			if (yinches > ziplineyinches) 
+		 			   {
+		 				if (thisPerson.lastztrigger < ziplinetrigger & zinches > ziplinetrigger)
+		 				   {
+		 			 	//	int zip = (int)Math.floor((currentztrigger + thisPerson.puserId) % 8);
 		 			 		
-		 			 		if (!zips[zip].isPlaying()) {
-		 		 				zips[zip].rewind();
-		 		 			}	
-		 					zips[zip].play();
-		 				    }
+		 			 	//	if (!zips[zip].isPlaying()) {
+		 		 		//		zips[zip].rewind();
+		 		 		//	}	
+		 				//	zips[zip].play();
+		 			       }
 		 				
-		 				if (thisPerson.lastztrigger < thundertrigger & zinches > thundertrigger){
+		 				if (thisPerson.lastztrigger < thundertrigger & zinches > thundertrigger)
+		 				   {
 
 		 		 		   int end = (int)Math.floor((currentztrigger + thisPerson.puserId) % 5);
-		 		 		   
-		 		 		   if (end < 4){
+		 		 		 	 	
+		 		 		   println("end: " + end);
+		 		 		   if (end < 4)
+		 		 		      {
 			 					if (!ends[end].isPlaying())
-			 					{
-			 						ends[end].rewind();
-			 					}
+			 					   {
+			 					   ends[end].rewind();
+			 					   }
 			 					ends[end].play();	 						 		 		   
-		 		 		   }
-		 		 		   if (end == 4){
+		 		 		      }
+		 		 		   if (end == 4)
+		 		 		      {
+		 		 			   /*
+  		 					  if (!auThunder.isPlaying())
+		 					     {
+		 						 auThunder.rewind();
+		 					     }
+		 					     auThunder.play();	 
+		 					     */
+		 		 		      }		
+		 			       }//occasional thunder	
 		 		 		   
-		 					if (!auThunder.isPlaying())
-		 					{
-		 						auThunder.rewind();
-		 					}
-		 					auThunder.play();	 				
-		 			       }//occasional thunder
 		 				}//y above zipline line
 		 			
-		 			if (yinches < ziplineyinches) {
+		 			if (yinches < ziplineyinches) 
+		 			   {
 			 		
 			 		   int key = (int)Math.floor((currentztrigger + thisPerson.puserId) % 6);
 	
-			 		   if (xinches < 0) {
+			 		   if (xinches < 0) 
+			 		      {
 			 			   println("piano key: " + key);
 			 			   piano[key].trigger();
-			 		   }
-			 		   if (xinches > 0) {
+			 		      }
+			 		   if (xinches > 0) 
+			 		      {
 			 			   println("bass key: " + key);
 			 			   bass[key].trigger();
-			 		   }
+			 		      }
 			 		   
+		 		      }
 			 		   thisPerson.lastztrigger = currentztrigger;
-		 		}
-		 		
-		 		if (movementz > 6) {
+		 		   }//this person is in a different trigger
+
+		 		if (movementz > 6) 
+		 		   {
 
 		 		    // auKick.trigger();
-
 		 	//		thisPerson.lastzinches = zinches;
-		 		}		 		
+		 		   }		 		
 
-		 		if (movementx > 6) {
-
+		 		if (movementx > 6) 
+		 		   {
 		 		    // auCello.trigger();
-
-		 			println("xinches " + xinches);
-		 			
+		 			println("xinches " + xinches);		 			
 		 			thisPerson.lastxinches = xinches;
-		 			
-		 		}
-		 	  }//lower than zip trigger, on the ground
-		 	}//if person is not in the same place
+		 		   }
+		 		
 		 	}//end playersound
-
 
 		 	public void mouseMoved() {
 		 		
@@ -360,20 +375,29 @@ import ddf.minim.signals.SineWave;
 		 		pads[2].close();
 		 		pads[3].close();
 
+		 		
 		 		ends[0].close();
 		 		ends[1].close();
 		 		ends[2].close();
 		 		ends[3].close();
 		 		
+		 		
+		/* 		
 		 		zips[0].close();
-		 		zips[1].close();
+		 */		
+		 		
+//		 		zips[1].close();
+		 		/*
 		 		zips[2].close();
 		 		zips[3].close();
+		 		*/
+		 		/*
 		 		zips[4].close();
 		 		zips[5].close();
 		 		zips[6].close();
 		 		zips[7].close();
-		
+*/		
+		 		
 		 		auThunder.close();
 		 		
 		 		minim.stop();
