@@ -28,7 +28,7 @@ public class KinectDebugger {
 
 			// draw the center of mass
 			if (kinect.getCoM(userList[i], com)) {
-				System.out.println(i + " " + com.z);
+//				System.out.println(i + " " + com.z);
 				kinect.convertRealWorldToProjective(com, com2d);
 				applet.stroke(100, 255, 0);
 				applet.strokeWeight(1);

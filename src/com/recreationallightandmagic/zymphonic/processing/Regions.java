@@ -7,18 +7,37 @@ import processing.core.PVector;
  * in space, tell me what region I'm in (and how far in). X and Y are always
  * centered based on the camera's view.
  * 
- * TODO: For an arrangement of LEDs, get region for every LED and display
- * it.
+ * TODO: For an arrangement of LEDs, get region for every LED and display it.
  */
 public class Regions {
 
-	public float startingDepth, depthPerSection, widthPerSection, heightPerSection;
-	public int numDepthSections, numHeightSections, numWidthSections;
+	public float startingDepth, heightOffset, depthPerSection, widthPerSection,
+			heightPerSection;
 
-	public SectionId getSectionId(PVector posiition) {
-		// TODO: Write and test this
-		return new SectionId(0, 0, 2, 0.1f, 0.2f, 2.2f);
+	public Regions(float startingDepth, float heightOffset,
+			float depthPerSection, float widthPerSection, float heightPerSection) {
+		this.startingDepth = startingDepth;
+		this.heightOffset = heightOffset;
+		this.depthPerSection = depthPerSection;
+		this.widthPerSection = widthPerSection;
+		this.heightPerSection = heightPerSection;
 	}
+
+	public SectionId getSectionId(PVector position) {
+		if (position == null) {
+			return null;
+		}
+		if (position.z < startingDepth) {
+			return null;
+		}
+		return new SectionId((int) Math.floor(position.x / widthPerSection),
+				(int) Math
+						.floor((position.y - heightOffset) / heightPerSection),
+				(int) Math
+						.floor((position.z - startingDepth) / depthPerSection),
+				0, 0, 0);
+	}
+
 
 	// Simple bean to hold the section ID, along with the distance of the point
 	// from the nearest boundary.
@@ -26,7 +45,8 @@ public class Regions {
 		public int x, y, z;
 		public float depthX, depthY, depthZ;
 
-		public SectionId(int x, int y, int z, float depthX, float depthY, float depthZ) {
+		public SectionId(int x, int y, int z, float depthX, float depthY,
+				float depthZ) {
 			this.x = x;
 			this.y = y;
 			this.z = z;
@@ -63,6 +83,13 @@ public class Regions {
 				return false;
 			return true;
 		}
+
+		@Override
+		public String toString() {
+			return "SectionId [x=" + x + ", y=" + y + ", z=" + z + "]";
+		}
+		
+		
 
 	}
 }

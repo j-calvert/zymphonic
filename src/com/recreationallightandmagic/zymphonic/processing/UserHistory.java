@@ -35,11 +35,18 @@ public class UserHistory {
 	}
 	
 	public synchronized PVector getHead() {
-		if(headIndex >= 0) {			
-			return events[headIndex].centerOfMass;
+		return getHeadOffset(0);
+	}
+	
+	public synchronized PVector getHeadOffset(int offset) {
+		int index = Constants.correctNegMod(headIndex - offset, CAPACITY);
+		if(headIndex >= 0 && events[index] != null) {			
+			return events[index].centerOfMass;
 		} else {
 			return null;
 		}
 	}
+	
+	
 
 }

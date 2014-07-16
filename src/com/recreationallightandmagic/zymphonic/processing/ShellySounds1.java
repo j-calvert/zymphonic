@@ -3,23 +3,25 @@ package com.recreationallightandmagic.zymphonic.processing;
 import processing.core.PApplet;
 import ddf.minim.Minim;
 
-public class ShellySounds1 {
+public class ShellySounds1 extends RegionSoundMap {
 
-	RegionSoundMap soundMap = new RegionSoundMap(2, 2, 8);
+	public ShellySounds1(int width, int height, int depth) {
+		super(width, height, depth);
+	}
 
 	public void setup(PApplet applet) {
 
 		Minim minim = new Minim(applet);
 
-		loadColumn(minim, 0, 0, "Piano1_A1.wav", "Piano2_C2.wav",
-				"Piano3_E2.wav", "Piano4_F2.wav", "Piano5_G2.wav",
-				"Piano6_A2.wav", "Piano1_A1.wav", "Piano2_C2.wav");
+		loadColumn(minim, 0, 0, "Piano1_A1.mp3", "Piano2_C2.mp3",
+				"Piano3_E2.mp3", "Piano4_F2.mp3", "Piano5_G2.mp3",
+				"Piano6_A2.mp3", "Piano1_A1.mp3", "Piano2_C2.mp3");
 
-		loadColumn(minim, 1, 0, "Bass1_A1.wav", "Bass2_C2.wav", "Bass3_E2.wav",
-				"Bass4_F2.wav", "Bass5_G2.wav", "Bass6_A2.wav", "Bass1_A1.wav",
-				"Bass2_C2.wav");
+		loadColumn(minim, 1, 0, "Bass1_A1.mp3", "Bass2_C2.mp3", "Bass3_E2.mp3",
+				"Bass4_F2.mp3", "Bass5_G2.mp3", "Bass6_A2.mp3", "Bass1_A1.mp3",
+				"Bass2_C2.mp3");
 
-		loadColumn(minim, 1, 1, "thunder1.mp3", "thunder2.mp3", "thunder3.mp3",
+		loadColumn(minim, 0, 1, "thunder1.mp3", "thunder2.mp3", "thunder3.mp3",
 				"thunder4.mp3", "thunder5.mp3", "thunder6.mp3", "thunder7.mp3",
 				"thunder8.mp3");
 
@@ -31,12 +33,12 @@ public class ShellySounds1 {
 	}
 
 	private void loadColumn(Minim minim, int x, int y, String... filenames) {
-		if (filenames.length != soundMap.samples[0][0].length) {
+		if (filenames.length != samples[0][0].length) {
 			throw new RuntimeException(
 					"Must call loadColumn with the correct number of files for the depth of the soundMap");
 		}
 		for (int z = 0; z < filenames.length; z++) {
-			soundMap.samples[x][y][z] = minim.loadSample(filenames[z]);
+			samples[x][y][z] = minim.loadSample(filenames[z]);
 		}
 	}
 
