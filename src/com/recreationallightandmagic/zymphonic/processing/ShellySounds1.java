@@ -38,7 +38,8 @@ public class ShellySounds1 extends RegionSoundMap {
 					"Must call loadColumn with the correct number of files for the depth of the soundMap");
 		}
 		for (int z = 0; z < filenames.length; z++) {
-			samples[x][y][z] = minim.loadSample(filenames[z]);
+			// For the love of god, leave the buffer in.
+			samples[x][y][z] = minim.loadSample(filenames[z], 9048);
 		}
 	}
 
