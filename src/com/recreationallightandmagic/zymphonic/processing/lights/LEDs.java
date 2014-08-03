@@ -1,4 +1,4 @@
-package com.recreationallightandmagic.zymphonic.processing;
+package com.recreationallightandmagic.zymphonic.processing.lights;
 
 /**  Butchered from OctoWS2811 movie2serial.pde 
  * 
@@ -60,7 +60,7 @@ public class LEDs {
 		}
 	}
 
-	void renderLights(PImage m) {
+	public void renderLights(PImage m) {
 		// read the movie's next frame (from if m were declared as a Movie)
 		// m.read();
 

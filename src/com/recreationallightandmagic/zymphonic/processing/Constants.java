@@ -11,6 +11,11 @@ public class Constants {
 
 	// Physical mapping
 	public static final int NUM_LIGHT_STRIPS = 8;
+	
+	// The 'row number' for the strips as laid out at Critical
+	public static int LEFT = 5;
+	public static int RIGHT = 1;
+
 
 	// Only needed (at this time) for absolute path to sound files via
 	// Wormhole.createInput
