@@ -45,7 +45,40 @@ public class LEDs {
 	int errorCount = 0;
 	float framerate = 0;
 
-	public void setup(PApplet applet) {
+	// A segment is a physical, contiguous strip of LEDs
+	public static final int LEDS_PER_STRIP = 240;
+
+	// How many do we chain from one cat5 pair from the teensy
+	public static final int STRIPS_PER_SEGMENT = 2;
+
+	// Physical mapping to teensy port. Needs to be a multiple of 8 to optimize
+	// use of teensy board with shield.
+	public static final int NUM_LIGHT_SEGMENTS = 8;
+
+	public static final int NUM_LIGHT_STRIPS = NUM_LIGHT_SEGMENTS * STRIPS_PER_SEGMENT;
+	
+	// The thing we (re-)use in the low-level render method
+	private final PImage image = new PImage(
+			LEDS_PER_STRIP * STRIPS_PER_SEGMENT, NUM_LIGHT_SEGMENTS);
+
+	public final LEDStrip[] ledStrips = new LEDStrip[NUM_LIGHT_STRIPS];
+
+	public void clear() {
+		for (LEDStrip led : ledStrips) {
+			led.clear();
+		}
+	}
+
+	public void setLedDirect(int ledSegmentNum, int ledIndex, int color) {
+		ledStrips[ledSegmentNum].leds[ledIndex].color = color;
+	}
+
+	public LEDs(PApplet applet) {
+
+		for (int i = 0; i < ledStrips.length; i++) {
+			ledStrips[i] = new LEDStrip();
+		}
+
 		String[] list = Serial.list();
 		// delay(20);
 		System.out.println("Serial Ports List:");
@@ -54,26 +87,34 @@ public class LEDs {
 													// names
 		// serialConfigure("/dev/ttyACM1");
 		if (errorCount > 0)
-			throw new RuntimeException("Got error setting up Lights.  Check that port is right for teensy.");
+			throw new RuntimeException(
+					"Got error setting up Lights.  Check that port is right for teensy.");
 		for (int i = 0; i < 256; i++) {
 			gammatable[i] = (int) (Math.pow((float) i / 255.0, gamma) * 255.0 + 0.5);
 		}
 	}
 
-	public void renderLights(PImage m) {
-		// read the movie's next frame (from if m were declared as a Movie)
-		// m.read();
+	public void renderLights() {
+		
+		// This part pretty much precludes any zig zagging, but that's OK for this application
+		for (int stripNum = 0; stripNum < ledStrips.length; stripNum++) {
+			int row = stripNum / STRIPS_PER_SEGMENT;
+			int colOffset = (stripNum % STRIPS_PER_SEGMENT) * LEDS_PER_STRIP;
+			for(int j = 0; j < LEDS_PER_STRIP; j++) {
+				image.set(row, colOffset + j, ledStrips[stripNum].leds[j].color);
+			}
+		}
 
 		// if (framerate == 0) framerate = m.getSourceFrameRate();
 		framerate = 30.0f; // TODO, how to read the frame rate???
 
 		for (int i = 0; i < numPorts; i++) {
 			// copy a portion of the movie's image to the LED image
-			int xoffset = percentage(m.width, ledArea[i].x);
-			int yoffset = percentage(m.height, ledArea[i].y);
-			int xwidth = percentage(m.width, ledArea[i].width);
-			int yheight = percentage(m.height, ledArea[i].height);
-			ledImage[i].copy(m, xoffset, yoffset, xwidth, yheight, 0, 0,
+			int xoffset = percentage(image.width, ledArea[i].x);
+			int yoffset = percentage(image.height, ledArea[i].y);
+			int xwidth = percentage(image.width, ledArea[i].width);
+			int yheight = percentage(image.height, ledArea[i].height);
+			ledImage[i].copy(image, xoffset, yoffset, xwidth, yheight, 0, 0,
 					ledImage[i].width, ledImage[i].height);
 			// convert the LED image to raw data
 			byte[] ledData = new byte[(ledImage[i].width * ledImage[i].height * 3) + 3];

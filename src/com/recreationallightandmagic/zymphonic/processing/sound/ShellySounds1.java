@@ -1,4 +1,4 @@
-package com.recreationallightandmagic.zymphonic.processing;
+package com.recreationallightandmagic.zymphonic.processing.sound;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -60,7 +60,6 @@ public class ShellySounds1 extends RegionSoundMap {
 	private void loadFilesIntoArray(Minim minim, AudioSample[] array,
 			String... filenames) {
 		for (int z = 0; z < filenames.length; z++) {
-			// For the love of god, leave the buffer in.
 			array[z] = getSample(minim, filenames[z]);
 		}
 	}
@@ -73,6 +72,7 @@ public class ShellySounds1 extends RegionSoundMap {
 
 	private AudioSample getSample(Minim minim, String filename) {
 		if (!sampleInstances.containsKey(filename)) {
+			// For the love of god, leave the buffer in.
 			sampleInstances.put(filename, minim.loadSample(filename, 9048));
 		}
 		return sampleInstances.get(filename);

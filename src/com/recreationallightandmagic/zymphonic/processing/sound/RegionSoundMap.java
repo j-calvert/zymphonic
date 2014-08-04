@@ -1,4 +1,4 @@
-package com.recreationallightandmagic.zymphonic.processing;
+package com.recreationallightandmagic.zymphonic.processing.sound;
 
 import static com.recreationallightandmagic.zymphonic.processing.Constants.correctNegMod;
 import processing.core.PApplet;

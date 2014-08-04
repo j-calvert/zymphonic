@@ -5,21 +5,12 @@ package com.recreationallightandmagic.zymphonic.processing;
  * configured per machine and or physical installation.
  */
 public class Constants {
-
-	// To convert from physical meters to LED-array index
-	public static final float LEDS_PER_METER = 60;
-
-	// Physical mapping
-	public static final int NUM_LIGHT_STRIPS = 8;
 	
-	// The 'row number' for the strips as laid out at Critical
-	public static int LEFT = 5;
-	public static int RIGHT = 1;
-
-
 	// Only needed (at this time) for absolute path to sound files via
 	// Wormhole.createInput
-	public static final String SAMPLE_DIRECTORY = "/home/" + System.getProperty("user.name") +"/workspace/zymphonic/soundSamples/";
+	public static final String SAMPLE_DIRECTORY = "/home/"
+			+ System.getProperty("user.name")
+			+ "/workspace/zymphonic/soundSamples/";
 
 	// new int[] { applet.color(255, 0, 0),
 	// applet.color(0, 255, 0), applet.color(0, 0, 255),

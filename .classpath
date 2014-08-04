@@ -7,7 +7,7 @@
 	<classpathentry kind="lib" path="jna.jar"/>
 	<classpathentry kind="lib" path="jssc.jar">
 		<attributes>
-			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="/home/jcalvert/processing-2.2.1/modes/java/libraries/serial/library/linux64"/>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="/home/iamlegit/processing-2.2.1/modes/java/libraries/serial/library/linux64"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/SimpleOpenNI"/>
@@ -17,5 +17,6 @@
 	<classpathentry kind="lib" path="mp3spi1.9.4.jar"/>
 	<classpathentry kind="lib" path="tritonus_aos.jar"/>
 	<classpathentry kind="lib" path="tritonus_share.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/ControlP5"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

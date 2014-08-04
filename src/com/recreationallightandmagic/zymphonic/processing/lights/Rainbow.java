@@ -2,8 +2,6 @@ package com.recreationallightandmagic.zymphonic.processing.lights;
 
 import java.util.Random;
 
-import com.recreationallightandmagic.zymphonic.processing.Constants;
-
 import processing.core.PImage;
 
 public class Rainbow {
@@ -32,8 +30,8 @@ public class Rainbow {
 			// image.set(x, y, applet.color(rand.nextInt(255) / 4,
 			// rand.nextInt(255) / 4,
 			// rand.nextInt(255) / 4));
-			image.set(x, Constants.LEFT, rainbowColors[index]);
-			image.set(x, Constants.RIGHT, rainbowColors[index]);
+			// image.set(x, Constants.BOTTOM_LEFT, rainbowColors[index]);
+			// image.set(x, Constants.BOTTOM_RIGHT, rainbowColors[index]);
 			// }
 		}
 	}
