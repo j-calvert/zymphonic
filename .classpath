@@ -18,5 +18,10 @@
 	<classpathentry kind="lib" path="tritonus_aos.jar"/>
 	<classpathentry kind="lib" path="tritonus_share.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/ControlP5"/>
+	<classpathentry kind="lib" path="peasycam.jar"/>
+	<classpathentry kind="lib" path="gluegen-rt-natives-linux-amd64.jar"/>
+	<classpathentry kind="lib" path="jogl-all-natives-linux-amd64.jar"/>
+	<classpathentry kind="lib" path="jogl-all.jar"/>
+	<classpathentry kind="lib" path="gluegen-rt.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

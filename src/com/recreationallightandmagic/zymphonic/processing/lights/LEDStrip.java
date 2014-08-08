@@ -1,6 +1,6 @@
 package com.recreationallightandmagic.zymphonic.processing.lights;
 
-import com.recreationallightandmagic.zymphonic.processing.input.DepthHistoryRegion;
+import com.recreationallightandmagic.zymphonic.processing.input.DepthRegion;
 
 /**
  * Keeps track of the physical mapping of depth as provided by the kinect, and
@@ -37,7 +37,7 @@ public class LEDStrip {
 		// TODO Write this
 	}
 
-	public void addHistogram(DepthHistoryRegion region, float decay,
+	public void addHistogram(DepthRegion region, float decay,
 			int replayOffset) {
 		// TODO Write this too
 	}

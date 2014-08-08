@@ -2,15 +2,10 @@ package com.recreationallightandmagic.zymphonic.processing;
 
 import java.awt.Frame;
 
+import com.recreationallightandmagic.zymphonic.processing.lights.LEDs;
+
 import peasy.PeasyCam;
 import processing.core.PApplet;
-import processing.core.PVector;
-
-import com.recreationallightandmagic.zymphonic.processing.input.DepthRegion;
-import com.recreationallightandmagic.zymphonic.processing.input.Kinect;
-import com.recreationallightandmagic.zymphonic.processing.lights.LEDs;
-import com.recreationallightandmagic.zymphonic.processing.ui.MouseBox;
-
 import controlP5.ColorPicker;
 import controlP5.ControlEvent;
 import controlP5.ControlFont;
@@ -21,39 +16,26 @@ import controlP5.RadioButton;
 import controlP5.Slider2D;
 import controlP5.Toggle;
 
-/**
- * Top level applet class that runs the entire application. This has only GUI
- * related stuff, everything else is based out of WormholeCore.
- *
- */
-public class WormholeApplication extends WormholeCore {
+public class Wormhole extends PApplet {
+
+	private ControlP5 cp5;
+	private ViewerFrame cf;
 	private static final long serialVersionUID = 1L;
-
-	ControlP5 cp5;
-	private Toggle updateKinect;
-	private ColorPicker cp;
-
-	private static int YORG = 0;
 
 	private Numberbox ledIdx;
 	private Numberbox ledSegmentNum;
-	protected LEDs lights; // The low level LEDs
+	private int YORG = 0; // TODO Use translate instead
 
 	private RadioButton mouseModeChooser;
 
-	private MouseBox mouseInputHandler;
+	private Slider2D s;
 
-	private Slider2D corner;
+	private Toggle updateKinect;
 
-	private Slider2D size;
-
-	private Slider2D depth;
+	private ColorPicker cp;
+	PeasyCam cam;
 
 	public void setup() {
-		lights = new LEDs(this);
-		kinect = new Kinect(this);
-
-		// // // Control Panel // // //
 		cp5 = new ControlP5(this);
 		cp5.setFont(new ControlFont(createFont("Arial", 12, true), 12));
 
@@ -92,71 +74,29 @@ public class WormholeApplication extends WormholeCore {
 			t.getCaptionLabel().getStyle().backgroundHeight = 13;
 		}
 
-		// MouseInputHandler one-off
-		DepthRegion mouseInputHandler= new DepthRegion();
-		mouseInputHandler.x = 20;
-		mouseInputHandler.y = 60;
-		mouseInputHandler.w = 120;
-		mouseInputHandler.h = 160;
-		mouseInputHandler.color = Constants.basicColors[2];
-
-		corner = cp5.addSlider2D("corner").setPosition(30, YORG + 300)
+		s = cp5.addSlider2D("wave").setPosition(30, YORG + 300)
 				.setSize(100, 100).setArrayValue(new float[] { 50, 50 });
-		size = cp5.addSlider2D("size").setPosition(150, YORG + 300)
-				.setSize(100, 100).setArrayValue(new float[] { 50, 50 });
-		depth = cp5.addSlider2D("depth").setPosition(270, YORG + 300)
-				.setSize(100, 100).setArrayValue(new float[] { 50, 50 });
-		addViewerFrame("Kinect 1", 640, 480);
 
-		//
-		// LedUI
-
-		// *THE* UI !!!
-		this.size(640, 640);
-		this.background(64);
-
+		size(640, 480);
+//		addViewerFrame("Kinect 1", 640, 480);
 	}
 
-	@Override
 	public void draw() {
-		lights.clear();
-		int colorValue = cp.getColorValue();
-		for (int i = 0; i < (int) ledIdx.getValue(); i++) {
-			for (int j = 0; j < LEDs.NUM_LIGHT_STRIPS; j++) {
-				lights.setLedDirect(j, i, colorValue);
-			}
-		}
-		// kinect.draw(this);
-		kinect.kinect.update();
-		mouseInputHandler.draw(this, mouseX, mouseY);
-		lights.renderLights();
-		image(lights.image, 80, 700);
+		super.draw();
 	}
-
-	@Override
-	public void mouseDragged() {
-		super.mouseDragged();
-		mouseInputHandler.mouseDragged(mouseX, mouseY);
-	}
-
-	@Override
-	public void mousePressed() {
-		super.mousePressed();
-		mouseInputHandler.mousePressed(mouseX, mouseY);
-	}
-
-	@Override
-	public void mouseReleased() {
-		mouseInputHandler.mouseReleased(mouseX, mouseY);
-		super.mouseReleased();
-	}
-
+	
 	public void controlEvent(ControlEvent c) {
 		System.out.println("Event from Controller " + c.getName()
 				+ " with value " + c.getValue());
 		if (c.isFrom(updateKinect)) {
-			kinect.redraw = c.getValue() > .5;
+			// kinect.redraw = c.getValue() > .5;
 		}
+	}
+
+	@Override
+	public void mouseClicked() {
+		System.out.println("click");
+		super.mouseClicked();
 	}
 
 	ViewerFrame addViewerFrame(String name, int width, int height) {
@@ -173,27 +113,17 @@ public class WormholeApplication extends WormholeCore {
 	}
 
 	public class ViewerFrame extends PApplet {
-		private static final long serialVersionUID = 1L;
 		int w, h;
-		private PeasyCam cam;
 
 		public void setup() {
 			size(w, h, OPENGL);
 			cam = new PeasyCam(this, 1000);
 			cam.setMinimumDistance(50);
-			cam.setMaximumDistance(1500);
+			cam.setMaximumDistance(500);
 		}
 
 		public void draw() {
-			background(0);
-			rotateX(radians(180f));
-			stroke(255);
-			PVector[] depthPoints = kinect.kinect.depthMapRealWorld();
-			for (int i = 0; i < depthPoints.length; i = i + 10) {
-				PVector pv = depthPoints[i];
-				point(pv.x, pv.y, pv.z);
-			}
-
+			draw3d();
 		}
 
 		public ViewerFrame(int theWidth, int theHeight) {
@@ -201,5 +131,18 @@ public class WormholeApplication extends WormholeCore {
 			h = theHeight;
 		}
 
+		void draw3d() {
+
+			rotateX(-.5f);
+			rotateY(-.5f);
+			background(0);
+			fill(255, 0, 0);
+			box(30);
+			pushMatrix();
+			translate(0, 0, 20);
+			fill(0, 0, 255);
+			box(5);
+			popMatrix();
+		}
 	}
 }

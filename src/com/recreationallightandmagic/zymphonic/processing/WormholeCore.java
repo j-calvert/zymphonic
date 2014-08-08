@@ -9,7 +9,7 @@ import processing.core.PImage;
 import processing.core.PVector;
 import SimpleOpenNI.SimpleOpenNI;
 
-import com.recreationallightandmagic.zymphonic.processing.input.DepthHistoryRegion;
+import com.recreationallightandmagic.zymphonic.processing.input.DepthRegion;
 import com.recreationallightandmagic.zymphonic.processing.input.Kinect;
 import com.recreationallightandmagic.zymphonic.processing.lights.LEDs;
 
@@ -27,10 +27,10 @@ public class WormholeCore extends PApplet {
 	protected LEDs lights; // The low level LEDs
 	protected Kinect kinect; // The Kinect
 	// activeHistories indexed by kinect UserID if and only if it is active
-	private DepthHistoryRegion[] activeHistories = new DepthHistoryRegion[MAX_SIMUL_USERS];
+	private DepthRegion[] activeHistories = new DepthRegion[MAX_SIMUL_USERS];
 	// pastHistories enqueued upon being nulled out of the activeHistories
 	// array. Tail of queue are most recent.
-	private Deque<DepthHistoryRegion> pastHistories = new ArrayDeque<DepthHistoryRegion>();
+	private Deque<DepthRegion> pastHistories = new ArrayDeque<DepthRegion>();
 	// Regions!
 	/*
 	 * public float startingDepth, heightOffset, depthPerSection,
@@ -64,8 +64,6 @@ public class WormholeCore extends PApplet {
 		super.setup();
 
 		// Initialize our core components: lights, kinect, and sound
-		lights = new LEDs(this);
-		kinect = new Kinect(this);
 
 		// Sound stuff
 		// soundMap.setup(this);
@@ -75,18 +73,6 @@ public class WormholeCore extends PApplet {
 	@Override
 	public InputStream createInput(String fileName) {
 		return super.createInput(Constants.SAMPLE_DIRECTORY + fileName);
-	}
-
-	@Override
-	public void draw() {
-		kinect.draw(this);
-		lights.renderLights();
-
-		updateUserHistories();
-
-		// testFlashLights();
-		playTones();
-
 	}
 
 	private void playTones() {

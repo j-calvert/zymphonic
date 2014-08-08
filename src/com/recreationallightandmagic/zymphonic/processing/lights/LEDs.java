@@ -58,7 +58,7 @@ public class LEDs {
 	public static final int NUM_LIGHT_STRIPS = NUM_LIGHT_SEGMENTS * STRIPS_PER_SEGMENT;
 	
 	// The thing we (re-)use in the low-level render method
-	private final PImage image = new PImage(
+	public final PImage image = new PImage(
 			LEDS_PER_STRIP * STRIPS_PER_SEGMENT, NUM_LIGHT_SEGMENTS);
 
 	public final LEDStrip[] ledStrips = new LEDStrip[NUM_LIGHT_STRIPS];
@@ -69,8 +69,8 @@ public class LEDs {
 		}
 	}
 
-	public void setLedDirect(int ledSegmentNum, int ledIndex, int color) {
-		ledStrips[ledSegmentNum].leds[ledIndex].color = color;
+	public void setLedDirect(int ledStripNum, int ledIndex, int color) {
+		ledStrips[ledStripNum].leds[ledIndex].color = color;
 	}
 
 	public LEDs(PApplet applet) {
@@ -101,24 +101,24 @@ public class LEDs {
 			int row = stripNum / STRIPS_PER_SEGMENT;
 			int colOffset = (stripNum % STRIPS_PER_SEGMENT) * LEDS_PER_STRIP;
 			for(int j = 0; j < LEDS_PER_STRIP; j++) {
-				image.set(row, colOffset + j, ledStrips[stripNum].leds[j].color);
+				int thisColor = ledStrips[stripNum].leds[j].color;
+				image.set(colOffset + j, row, thisColor);
 			}
 		}
 
-		// if (framerate == 0) framerate = m.getSourceFrameRate();
 		framerate = 30.0f; // TODO, how to read the frame rate???
 
 		for (int i = 0; i < numPorts; i++) {
-			// copy a portion of the movie's image to the LED image
-			int xoffset = percentage(image.width, ledArea[i].x);
-			int yoffset = percentage(image.height, ledArea[i].y);
-			int xwidth = percentage(image.width, ledArea[i].width);
-			int yheight = percentage(image.height, ledArea[i].height);
-			ledImage[i].copy(image, xoffset, yoffset, xwidth, yheight, 0, 0,
-					ledImage[i].width, ledImage[i].height);
+//			// copy a portion of the movie's image to the LED image
+//			int xoffset = percentage(image.width, ledArea[i].x);
+//			int yoffset = percentage(image.height, ledArea[i].y);
+//			int xwidth = percentage(image.width, ledArea[i].width);
+//			int yheight = percentage(image.height, ledArea[i].height);
+//			ledImage[i].copy(image, xoffset, yoffset, xwidth, yheight, 0, 0,
+//					ledImage[i].width, ledImage[i].height);
 			// convert the LED image to raw data
-			byte[] ledData = new byte[(ledImage[i].width * ledImage[i].height * 3) + 3];
-			image2data(ledImage[i], ledData, ledLayout[i]);
+			byte[] ledData = new byte[(image.width * image.height * 3) + 3];
+			image2data(image, ledData, true);
 			if (i == 0) {
 				ledData[0] = '*'; // first Teensy is the frame sync master
 				int usec = (int) ((1000000.0 / framerate) * 0.75);
