@@ -4,7 +4,6 @@ import java.awt.Frame;
 import java.util.ArrayList;
 import java.util.List;
 
-import peasy.CameraState;
 import peasy.PeasyCam;
 import processing.core.PApplet;
 import processing.core.PVector;
@@ -12,7 +11,6 @@ import processing.core.PVector;
 import com.recreationallightandmagic.zymphonic.processing.input.DepthRegion;
 import com.recreationallightandmagic.zymphonic.processing.input.Kinect;
 import com.recreationallightandmagic.zymphonic.processing.lights.LEDs;
-import com.recreationallightandmagic.zymphonic.processing.ui.MouseBox;
 
 import controlP5.Button;
 import controlP5.ColorPicker;
@@ -20,6 +18,8 @@ import controlP5.ControlEvent;
 import controlP5.ControlFont;
 import controlP5.ControlP5;
 import controlP5.Controller;
+import controlP5.ControllerInterface;
+import controlP5.Matrix;
 import controlP5.Numberbox;
 import controlP5.RadioButton;
 import controlP5.Slider2D;
@@ -32,10 +32,12 @@ import controlP5.Toggle;
  * related stuff, everything else is based out of WormholeCore.
  *
  */
-public class WormholeApplication extends WormholeCore {
+public class WormholeApplication extends PApplet {
+	private static final int BACKGROUND = 64;
 	private static final float POSITION_SCALE = 500f; // Scale of position
 														// slider
 	private static final float RATIO = 640f / 480;
+	private static final int ACTIVE_REGION_COLOR = Constants.basicColors[4];
 
 	private static final long serialVersionUID = 1L;
 
@@ -46,10 +48,9 @@ public class WormholeApplication extends WormholeCore {
 	private Numberbox ledIdx;
 	private Numberbox ledSegmentNum;
 	protected LEDs lights; // The low level LEDs
+	protected Kinect kinect; // The Kinect
 
 	private RadioButton regionSelector;
-
-	private MouseBox mouseInputHandler;
 
 	private Slider2D position;
 
@@ -61,7 +62,10 @@ public class WormholeApplication extends WormholeCore {
 
 	// The region currently selected for editing (e.g. one that was just
 	// created)
-	private int selectedRegionId;
+	private int selectedRegionId = -1;
+
+	// The segment currently selected within the currently selected region.
+	private int selectedSegmentId = -1;
 
 	private Button newRegionButton;
 
@@ -69,11 +73,13 @@ public class WormholeApplication extends WormholeCore {
 
 	private Textarea messageText;
 
-	private Button deleteRegionButton;
+	private Button saveButton;
+	private Button loadButton;
 
 	private Button resetCam;
 
 	private PointCloudFrame viewerFrame;
+	private Matrix soundMatrix;
 
 	public void setup() {
 		lights = new LEDs(this);
@@ -83,7 +89,7 @@ public class WormholeApplication extends WormholeCore {
 		viewerFrame = addViewerFrame("Kinect 1", 640, 480);
 
 		// *THE* UI !!!
-		size(640, 640);
+		size(640, 840);
 		background(64);
 
 	}
@@ -115,11 +121,7 @@ public class WormholeApplication extends WormholeCore {
 				.setSize(100, 14).setRange(0, LEDs.NUM_LIGHT_STRIPS - 1)
 				.setValue(0).setDirection(Controller.HORIZONTAL);
 
-		// Radio buttons that determine the mode of mouse interaction
-		regionSelector = cp5.addRadioButton("radioButton").setPosition(20, 160)
-				.setSize(20, 20).setColorForeground(color(120))
-				.setColorActive(color(255)).setColorLabel(color(255))
-				.setItemsPerRow(5).setSpacingColumn(80);
+		regionSelector = newRegionRadioButtons();
 
 		position = cp5
 				.addSlider2D("\nposition")
@@ -140,11 +142,21 @@ public class WormholeApplication extends WormholeCore {
 
 		newRegionButton = cp5.addButton("newButton").setPosition(230, 220)
 				.setSize(40, 30).setCaptionLabel("New");
-		deleteRegionButton = cp5.addButton("deleteButton")
-				.setPosition(530, 220).setSize(70, 30)
-				.setCaptionLabel("Delete");
+		saveButton = cp5.addButton("saveButton").setPosition(480, 220)
+				.setSize(40, 30).setCaptionLabel("Save");
+		loadButton = cp5.addButton("loadButton").setPosition(530, 220)
+				.setSize(40, 30).setCaptionLabel("Load");
 		newRegionText = cp5.addTextfield("", 30, 220, 200, 30);
 		messageText = cp5.addTextarea("message", "", 30, 260, 300, 30);
+
+		soundMatrix = cp5.addMatrix("soundMatrix").setPosition(30, 440)
+				.setSize(400, 200).setGrid(40, 20).setGap(1, 1).setInterval(10)
+				.setMode(ControlP5.MULTIPLES).setColorBackground(color(120))
+				.setBackground(color(40));
+	}
+
+	public void soundMatrix(int x, int y) {
+		System.out.println("Triggered sound matrix at x,y = " + x + ", " + y);
 	}
 
 	public void addRegionSelector(String name, int id) {
@@ -156,26 +168,17 @@ public class WormholeApplication extends WormholeCore {
 		regionSelector.activate(name);
 	}
 
-	public void removeRegion(String name) {
-		regionSelector.removeItem(name);
-		cp5.remove(regionSelector);
-		regionSelector = cp5.addRadioButton("radioButton").setPosition(20, 160)
+	private RadioButton newRegionRadioButtons() {
+		return cp5.addRadioButton("radioButton").setPosition(20, 160)
 				.setSize(20, 20).setColorForeground(color(120))
-				.setColorActive(color(255)).setColorLabel(color(255))
-				.setItemsPerRow(5).setSpacingColumn(80);
-		regions.remove(name);
-		for (int i = 0; i < regions.size(); i++) {
-			DepthRegion depthRegion = regions.get(i);
-			addRegionSelector(depthRegion.name, i);
-		}
-		regions.remove(selectedRegionId);
-		selectedRegionId = -1;
-
+				.setCaptionLabel("Regions").setColorActive(ACTIVE_REGION_COLOR)
+				.setColorLabel(color(255)).setItemsPerRow(5)
+				.setSpacingColumn(80);
 	}
 
 	@Override
 	public void draw() {
-		background(64);
+		background(BACKGROUND);
 		lights.clear();
 		int colorValue = cp.getColorValue();
 		for (int i = 0; i < (int) ledIdx.getValue(); i++) {
@@ -193,33 +196,13 @@ public class WormholeApplication extends WormholeCore {
 	public void controlEvent(ControlEvent c) {
 		message("");
 		if (c.isFrom(newRegionButton)) {
-			String name = newRegionText.getText();
-			if (name == null || name.isEmpty()
-					|| regionSelector.getItem(name) != null) {
-				message("You have to choose a new, unique name");
-			} else {
-				DepthRegion dr = new DepthRegion(name,
-						position.getArrayValue(0), position.getArrayValue(1),
-						size.getArrayValue(0), size.getArrayValue(1),
-						depth.getArrayValue(0), depth.getArrayValue(1));
-				addRegionSelector(name, regions.size());
-				regions.add(dr);
-				selectedRegionId = regions.size() - 1;
-			}
-		} else if (c.isFrom(deleteRegionButton)) {
-			DepthRegion depthRegion = getSelectedRegion();
-			if (depthRegion != null) {
-				removeRegion(depthRegion.name);
-			}
+			createNewRegion(newRegionText.getText());
+		} else if (c.isFrom(saveButton)) {
+			saveState(newRegionText.getText());
+		} else if (c.isFrom(loadButton)) {
+			loadState(newRegionText.getText());
 		} else if (c.isFrom(regionSelector)) {
-			selectedRegionId = (int) regionSelector.getValue();
-			DepthRegion depthRegion = getSelectedRegion();
-			if (depthRegion != null) {
-				position.setArrayValue(new float[] { depthRegion.x,
-						depthRegion.y });
-				size.setArrayValue(new float[] { depthRegion.w, depthRegion.h });
-				depth.setArrayValue(new float[] { depthRegion.z, depthRegion.d });
-			}
+			switchToRegion((int) regionSelector.getValue());
 		} else if (c.isFrom(depth)) {
 			DepthRegion depthRegion = getSelectedRegion();
 			if (depthRegion != null) {
@@ -232,7 +215,7 @@ public class WormholeApplication extends WormholeCore {
 			DepthRegion depthRegion = getSelectedRegion();
 			if (depthRegion != null) {
 				depthRegion.x = position.getArrayValue(0);
-				depthRegion.y = position.getArrayValue(1);
+				depthRegion.y = -position.getArrayValue(1);
 			}
 		} else if (c.isFrom(size)) {
 			DepthRegion depthRegion = getSelectedRegion();
@@ -242,8 +225,50 @@ public class WormholeApplication extends WormholeCore {
 			}
 		} else if (c.isFrom(resetCam)) {
 			viewerFrame.reset();
+		} else if (c.isFrom(soundMatrix)) {
+			System.out.println("Fielding from soundMatrix "
+					+ soundMatrix.getArrayValue(0) + " "
+					+ soundMatrix.getArrayValue(1));
 		}
 
+	}
+
+	private void loadState(String text) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void saveState(String text) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void createNewRegion(String name) {
+		if (name == null || name.isEmpty()
+				|| regionSelector.getItem(name) != null) {
+			message("You have to choose a new, unique name");
+		} else {
+			DepthRegion dr = new DepthRegion(name,
+					position.getArrayValue(0), -position.getArrayValue(1),
+					size.getArrayValue(0), size.getArrayValue(1),
+					depth.getArrayValue(0), depth.getArrayValue(1));
+			addRegionSelector(name, regions.size());
+			regions.add(dr);
+			selectedRegionId = regions.size() - 1;
+		}
+	}
+
+	private void switchToRegion(int selected) {
+		selectedRegionId = selected;
+		DepthRegion depthRegion = getSelectedRegion();
+		if (depthRegion != null) {
+			// setArrayValue for slider 2D is terrible, be careful here!!!
+			position.setArrayValue(new float[] {
+					POSITION_SCALE * RATIO + depthRegion.x,
+					POSITION_SCALE - depthRegion.y });
+			size.setArrayValue(new float[] { depthRegion.w, depthRegion.h });
+			depth.setArrayValue(new float[] { depthRegion.z, depthRegion.d });
+		}
 	}
 
 	private DepthRegion getSelectedRegion() {
@@ -300,7 +325,7 @@ public class WormholeApplication extends WormholeCore {
 					PVector pv = depthPoints[i];
 					if (selectedRegion != null
 							&& selectedRegion.consider(pv) != -1) {
-						stroke(Constants.basicColors[4]);
+						stroke(ACTIVE_REGION_COLOR);
 					} else {
 						stroke(255);
 					}

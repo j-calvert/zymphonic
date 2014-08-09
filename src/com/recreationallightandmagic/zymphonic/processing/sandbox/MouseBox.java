@@ -1,4 +1,4 @@
-package com.recreationallightandmagic.zymphonic.processing.ui;
+package com.recreationallightandmagic.zymphonic.processing.sandbox;
 
 import processing.core.PApplet;
 

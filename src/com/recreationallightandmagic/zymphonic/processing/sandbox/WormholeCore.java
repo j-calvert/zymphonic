@@ -1,4 +1,4 @@
-package com.recreationallightandmagic.zymphonic.processing;
+package com.recreationallightandmagic.zymphonic.processing.sandbox;
 
 import java.io.InputStream;
 import java.util.ArrayDeque;
@@ -9,6 +9,7 @@ import processing.core.PImage;
 import processing.core.PVector;
 import SimpleOpenNI.SimpleOpenNI;
 
+import com.recreationallightandmagic.zymphonic.processing.Constants;
 import com.recreationallightandmagic.zymphonic.processing.input.DepthRegion;
 import com.recreationallightandmagic.zymphonic.processing.input.Kinect;
 import com.recreationallightandmagic.zymphonic.processing.lights.LEDs;
@@ -24,8 +25,6 @@ public class WormholeCore extends PApplet {
 	public static final boolean TRACK_USERS = false;
 	public static final int MAX_SIMUL_USERS = 10;
 
-	protected LEDs lights; // The low level LEDs
-	protected Kinect kinect; // The Kinect
 	// activeHistories indexed by kinect UserID if and only if it is active
 	private DepthRegion[] activeHistories = new DepthRegion[MAX_SIMUL_USERS];
 	// pastHistories enqueued upon being nulled out of the activeHistories

@@ -1,7 +1,7 @@
 package com.recreationallightandmagic.zymphonic.processing.input;
 
 import com.recreationallightandmagic.zymphonic.processing.Constants;
-import com.recreationallightandmagic.zymphonic.processing.WormholeCore;
+import com.recreationallightandmagic.zymphonic.processing.sandbox.WormholeCore;
 
 import processing.core.PApplet;
 import processing.core.PVector;

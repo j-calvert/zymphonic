@@ -1,4 +1,4 @@
-package com.recreationallightandmagic.zymphonic.processing.input;
+package com.recreationallightandmagic.zymphonic.processing.sandbox;
 
 /**
  * A convenience class for dealing with a frame of depth data.

@@ -1,9 +1,11 @@
 package com.recreationallightandmagic.zymphonic.processing.input;
 
-import com.recreationallightandmagic.zymphonic.processing.Constants;
+import org.codehaus.jackson.annotate.JsonIgnore;
 
 import processing.core.PApplet;
 import processing.core.PVector;
+
+import com.recreationallightandmagic.zymphonic.processing.Constants;
 
 /**
  * A history of depth measurements for a region. We keep a few running averages
@@ -20,6 +22,8 @@ public class DepthRegion {
 	public String name;
 	// Upper left corner, nearest, and height, width and depth array
 	public float x, y, z, w, h, d;
+	
+	@JsonIgnore
 	public boolean[] isHit = new boolean[MAX_SECTIONS],
 			wasHit = new boolean[MAX_SECTIONS];
 

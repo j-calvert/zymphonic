@@ -1,4 +1,4 @@
-package com.recreationallightandmagic.zymphonic.processing.sound;
+package com.recreationallightandmagic.zymphonic.processing.sandbox;
 
 import java.util.HashMap;
 import java.util.Map;
