@@ -1,7 +1,10 @@
 package com.recreationallightandmagic.zymphonic.processing;
 
 import java.awt.Frame;
+import java.util.ArrayList;
+import java.util.List;
 
+import peasy.CameraState;
 import peasy.PeasyCam;
 import processing.core.PApplet;
 import processing.core.PVector;
@@ -11,6 +14,7 @@ import com.recreationallightandmagic.zymphonic.processing.input.Kinect;
 import com.recreationallightandmagic.zymphonic.processing.lights.LEDs;
 import com.recreationallightandmagic.zymphonic.processing.ui.MouseBox;
 
+import controlP5.Button;
 import controlP5.ColorPicker;
 import controlP5.ControlEvent;
 import controlP5.ControlFont;
@@ -19,6 +23,8 @@ import controlP5.Controller;
 import controlP5.Numberbox;
 import controlP5.RadioButton;
 import controlP5.Slider2D;
+import controlP5.Textarea;
+import controlP5.Textfield;
 import controlP5.Toggle;
 
 /**
@@ -27,98 +33,149 @@ import controlP5.Toggle;
  *
  */
 public class WormholeApplication extends WormholeCore {
+	private static final float POSITION_SCALE = 500f; // Scale of position
+														// slider
+	private static final float RATIO = 640f / 480;
+
 	private static final long serialVersionUID = 1L;
 
 	ControlP5 cp5;
 	private Toggle updateKinect;
 	private ColorPicker cp;
 
-	private static int YORG = 0;
-
 	private Numberbox ledIdx;
 	private Numberbox ledSegmentNum;
 	protected LEDs lights; // The low level LEDs
 
-	private RadioButton mouseModeChooser;
+	private RadioButton regionSelector;
 
 	private MouseBox mouseInputHandler;
 
-	private Slider2D corner;
+	private Slider2D position;
 
 	private Slider2D size;
 
 	private Slider2D depth;
 
+	private List<DepthRegion> regions = new ArrayList<DepthRegion>();
+
+	// The region currently selected for editing (e.g. one that was just
+	// created)
+	private int selectedRegionId;
+
+	private Button newRegionButton;
+
+	private Textfield newRegionText;
+
+	private Textarea messageText;
+
+	private Button deleteRegionButton;
+
+	private Button resetCam;
+
+	private PointCloudFrame viewerFrame;
+
 	public void setup() {
 		lights = new LEDs(this);
 		kinect = new Kinect(this);
 
-		// // // Control Panel // // //
+		setupController();
+		viewerFrame = addViewerFrame("Kinect 1", 640, 480);
+
+		// *THE* UI !!!
+		size(640, 640);
+		background(64);
+
+	}
+
+	private void setupController() {
 		cp5 = new ControlP5(this);
 		cp5.setFont(new ControlFont(createFont("Arial", 12, true), 12));
 
 		// create a toggle
-		updateKinect = cp5.addToggle("update\nKinect")
-				.setPosition(10, YORG + 10).setSize(20, 20);
+		updateKinect = cp5.addToggle("update\npoint\ncloud")
+				.setPosition(10, 10).setSize(20, 20).setMode(ControlP5.SWITCH)
+				.setValue(true);
+		resetCam = cp5.addButton("reset cam").setPosition(10, 80)
+				.setSize(100, 20);
 
 		// create a color picker
-		cp = cp5.addColorPicker("picker").setPosition(80, YORG + 10)
+		cp = cp5.addColorPicker("picker").setPosition(80, 10)
 				.setColorValue(color(255, 128, 0, 128));
 
 		// create a number box (for specifying index within a given strip
 		ledIdx = cp5.addNumberbox("ledIndexChooser")
-				.setCaptionLabel("LED index").setPosition(380, YORG + 10)
+				.setCaptionLabel("LED index").setPosition(380, 10)
 				.setSize(100, 14).setRange(0, LEDs.LEDS_PER_STRIP - 1)
 				.setValue(6).setDirection(Controller.HORIZONTAL);
 
 		// create a number box (for specifying index within a given strip
 		ledSegmentNum = cp5.addNumberbox("ledSegment")
-				.setCaptionLabel("Segment Number").setPosition(380, YORG + 50)
+				.setCaptionLabel("Segment Number").setPosition(380, 50)
 				.setSize(100, 14).setRange(0, LEDs.NUM_LIGHT_STRIPS - 1)
 				.setValue(0).setDirection(Controller.HORIZONTAL);
 
 		// Radio buttons that determine the mode of mouse interaction
-		mouseModeChooser = cp5.addRadioButton("radioButton")
-				.setPosition(20, YORG + 160).setSize(20, 20)
-				.setColorForeground(color(120)).setColorActive(color(255))
-				.setColorLabel(color(255)).setItemsPerRow(5)
-				.setSpacingColumn(50).addItem("50", 1).addItem("100", 2)
-				.addItem("150", 3).addItem("200", 4).addItem("250", 5);
+		regionSelector = cp5.addRadioButton("radioButton").setPosition(20, 160)
+				.setSize(20, 20).setColorForeground(color(120))
+				.setColorActive(color(255)).setColorLabel(color(255))
+				.setItemsPerRow(5).setSpacingColumn(80);
 
-		for (Toggle t : mouseModeChooser.getItems()) {
-			t.getCaptionLabel().getStyle().moveMargin(-7, 0, 0, -3);
-			t.getCaptionLabel().getStyle().movePadding(7, 0, 0, 3);
-			t.getCaptionLabel().getStyle().backgroundWidth = 45;
-			t.getCaptionLabel().getStyle().backgroundHeight = 13;
+		position = cp5
+				.addSlider2D("\nposition")
+				.setPosition(30, 300)
+				.setSize((int) (RATIO * 100), 100)
+				.setMinX(-POSITION_SCALE * RATIO)
+				.setMaxX(POSITION_SCALE * RATIO)
+				.setMinY(-POSITION_SCALE)
+				.setMaxY(POSITION_SCALE)
+				.setArrayValue(
+						new float[] { POSITION_SCALE * RATIO, POSITION_SCALE });
+		size = cp5.addSlider2D("\nsize").setPosition(190, 300)
+				.setSize(100, 100).setMinX(0f).setMaxX(1000f).setMinY(0f)
+				.setMaxY(1000f).setArrayValue(new float[] { 100, 100 });
+		depth = cp5.addSlider2D("\nz, depth").setPosition(310, 300)
+				.setSize(100, 100).setMaxX(1000f).setMaxY(1000f)
+				.setArrayValue(new float[] { 500, 500 });
+
+		newRegionButton = cp5.addButton("newButton").setPosition(230, 220)
+				.setSize(40, 30).setCaptionLabel("New");
+		deleteRegionButton = cp5.addButton("deleteButton")
+				.setPosition(530, 220).setSize(70, 30)
+				.setCaptionLabel("Delete");
+		newRegionText = cp5.addTextfield("", 30, 220, 200, 30);
+		messageText = cp5.addTextarea("message", "", 30, 260, 300, 30);
+	}
+
+	public void addRegionSelector(String name, int id) {
+		RadioButton t = regionSelector.addItem(name, id);
+		t.getCaptionLabel().getStyle().moveMargin(-7, 0, 0, -3);
+		t.getCaptionLabel().getStyle().movePadding(7, 0, 0, 3);
+		t.getCaptionLabel().getStyle().backgroundWidth = 45;
+		t.getCaptionLabel().getStyle().backgroundHeight = 13;
+		regionSelector.activate(name);
+	}
+
+	public void removeRegion(String name) {
+		regionSelector.removeItem(name);
+		cp5.remove(regionSelector);
+		regionSelector = cp5.addRadioButton("radioButton").setPosition(20, 160)
+				.setSize(20, 20).setColorForeground(color(120))
+				.setColorActive(color(255)).setColorLabel(color(255))
+				.setItemsPerRow(5).setSpacingColumn(80);
+		regions.remove(name);
+		for (int i = 0; i < regions.size(); i++) {
+			DepthRegion depthRegion = regions.get(i);
+			addRegionSelector(depthRegion.name, i);
 		}
-
-		// MouseInputHandler one-off
-		DepthRegion mouseInputHandler= new DepthRegion();
-		mouseInputHandler.x = 20;
-		mouseInputHandler.y = 60;
-		mouseInputHandler.w = 120;
-		mouseInputHandler.h = 160;
-		mouseInputHandler.color = Constants.basicColors[2];
-
-		corner = cp5.addSlider2D("corner").setPosition(30, YORG + 300)
-				.setSize(100, 100).setArrayValue(new float[] { 50, 50 });
-		size = cp5.addSlider2D("size").setPosition(150, YORG + 300)
-				.setSize(100, 100).setArrayValue(new float[] { 50, 50 });
-		depth = cp5.addSlider2D("depth").setPosition(270, YORG + 300)
-				.setSize(100, 100).setArrayValue(new float[] { 50, 50 });
-		addViewerFrame("Kinect 1", 640, 480);
-
-		//
-		// LedUI
-
-		// *THE* UI !!!
-		this.size(640, 640);
-		this.background(64);
+		regions.remove(selectedRegionId);
+		selectedRegionId = -1;
 
 	}
 
 	@Override
 	public void draw() {
+		background(64);
 		lights.clear();
 		int colorValue = cp.getColorValue();
 		for (int i = 0; i < (int) ledIdx.getValue(); i++) {
@@ -128,40 +185,84 @@ public class WormholeApplication extends WormholeCore {
 		}
 		// kinect.draw(this);
 		kinect.kinect.update();
-		mouseInputHandler.draw(this, mouseX, mouseY);
+		// mouseInputHandler.draw(this, mouseX, mouseY);
 		lights.renderLights();
 		image(lights.image, 80, 700);
 	}
 
-	@Override
-	public void mouseDragged() {
-		super.mouseDragged();
-		mouseInputHandler.mouseDragged(mouseX, mouseY);
-	}
-
-	@Override
-	public void mousePressed() {
-		super.mousePressed();
-		mouseInputHandler.mousePressed(mouseX, mouseY);
-	}
-
-	@Override
-	public void mouseReleased() {
-		mouseInputHandler.mouseReleased(mouseX, mouseY);
-		super.mouseReleased();
-	}
-
 	public void controlEvent(ControlEvent c) {
-		System.out.println("Event from Controller " + c.getName()
-				+ " with value " + c.getValue());
-		if (c.isFrom(updateKinect)) {
-			kinect.redraw = c.getValue() > .5;
+		message("");
+		if (c.isFrom(newRegionButton)) {
+			String name = newRegionText.getText();
+			if (name == null || name.isEmpty()
+					|| regionSelector.getItem(name) != null) {
+				message("You have to choose a new, unique name");
+			} else {
+				DepthRegion dr = new DepthRegion(name,
+						position.getArrayValue(0), position.getArrayValue(1),
+						size.getArrayValue(0), size.getArrayValue(1),
+						depth.getArrayValue(0), depth.getArrayValue(1));
+				addRegionSelector(name, regions.size());
+				regions.add(dr);
+				selectedRegionId = regions.size() - 1;
+			}
+		} else if (c.isFrom(deleteRegionButton)) {
+			DepthRegion depthRegion = getSelectedRegion();
+			if (depthRegion != null) {
+				removeRegion(depthRegion.name);
+			}
+		} else if (c.isFrom(regionSelector)) {
+			selectedRegionId = (int) regionSelector.getValue();
+			DepthRegion depthRegion = getSelectedRegion();
+			if (depthRegion != null) {
+				position.setArrayValue(new float[] { depthRegion.x,
+						depthRegion.y });
+				size.setArrayValue(new float[] { depthRegion.w, depthRegion.h });
+				depth.setArrayValue(new float[] { depthRegion.z, depthRegion.d });
+			}
+		} else if (c.isFrom(depth)) {
+			DepthRegion depthRegion = getSelectedRegion();
+			if (depthRegion != null) {
+				depthRegion.z = depth.getArrayValue(0);
+				depthRegion.d = depth.getArrayValue(1);
+				System.out.println("Depths: " + depthRegion.z + " "
+						+ depthRegion.d);
+			}
+		} else if (c.isFrom(position)) {
+			DepthRegion depthRegion = getSelectedRegion();
+			if (depthRegion != null) {
+				depthRegion.x = position.getArrayValue(0);
+				depthRegion.y = position.getArrayValue(1);
+			}
+		} else if (c.isFrom(size)) {
+			DepthRegion depthRegion = getSelectedRegion();
+			if (depthRegion != null) {
+				depthRegion.w = size.getArrayValue(0);
+				depthRegion.h = size.getArrayValue(1);
+			}
+		} else if (c.isFrom(resetCam)) {
+			viewerFrame.reset();
+		}
+
+	}
+
+	private DepthRegion getSelectedRegion() {
+		if (selectedRegionId >= 0 && selectedRegionId < regions.size()) {
+			return regions.get(selectedRegionId);
+		} else {
+			return null;
 		}
 	}
 
-	ViewerFrame addViewerFrame(String name, int width, int height) {
+	private void message(String string) {
+		if (messageText != null && string != null) {
+			messageText.setText(string);
+		}
+	}
+
+	PointCloudFrame addViewerFrame(String name, int width, int height) {
 		Frame f = new Frame(name);
-		ViewerFrame p = new ViewerFrame(width, height);
+		PointCloudFrame p = new PointCloudFrame(width, height);
 		f.add(p);
 		p.init();
 		f.setTitle(name);
@@ -172,7 +273,7 @@ public class WormholeApplication extends WormholeCore {
 		return p;
 	}
 
-	public class ViewerFrame extends PApplet {
+	public class PointCloudFrame extends PApplet {
 		private static final long serialVersionUID = 1L;
 		int w, h;
 		private PeasyCam cam;
@@ -181,22 +282,45 @@ public class WormholeApplication extends WormholeCore {
 			size(w, h, OPENGL);
 			cam = new PeasyCam(this, 1000);
 			cam.setMinimumDistance(50);
-			cam.setMaximumDistance(1500);
+			cam.setMaximumDistance(4000);
+		}
+
+		public void reset() {
+			cam.reset();
 		}
 
 		public void draw() {
-			background(0);
-			rotateX(radians(180f));
-			stroke(255);
-			PVector[] depthPoints = kinect.kinect.depthMapRealWorld();
-			for (int i = 0; i < depthPoints.length; i = i + 10) {
-				PVector pv = depthPoints[i];
-				point(pv.x, pv.y, pv.z);
+			if (updateKinect.getValue() > 0.5f) {
+				background(0);
+				rotateX(radians(180f));
+				stroke(255);
+				PVector[] depthPoints = kinect.kinect.depthMapRealWorld();
+				DepthRegion selectedRegion = getSelectedRegion();
+				for (int i = 0; i < depthPoints.length; i = i + 10) {
+					PVector pv = depthPoints[i];
+					if (selectedRegion != null
+							&& selectedRegion.consider(pv) != -1) {
+						stroke(Constants.basicColors[4]);
+					} else {
+						stroke(255);
+					}
+					point(pv.x, pv.y, pv.z);
+				}
+				// Represent the kinect
+				noFill();
+				box(40f, 10f, 20f);
+				translate(0, -10, 0);
+				box(20f, 10f, 20f);
+				// Draw the regions
+				translate(0, 10, 0);
+				for (int regionId = 0; regionId < regions.size(); regionId++) {
+					DepthRegion region = regions.get(regionId);
+					region.draw(this, selectedRegionId == regionId);
+				}
 			}
-
 		}
 
-		public ViewerFrame(int theWidth, int theHeight) {
+		public PointCloudFrame(int theWidth, int theHeight) {
 			w = theWidth;
 			h = theHeight;
 		}
