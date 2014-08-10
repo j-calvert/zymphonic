@@ -18,7 +18,6 @@ import controlP5.ControlEvent;
 import controlP5.ControlFont;
 import controlP5.ControlP5;
 import controlP5.Controller;
-import controlP5.ControllerInterface;
 import controlP5.Matrix;
 import controlP5.Numberbox;
 import controlP5.RadioButton;
@@ -30,7 +29,7 @@ import controlP5.Toggle;
 /**
  * Top level applet class that runs the entire application. This has only GUI
  * related stuff, everything else is based out of WormholeCore.
- *
+ * 
  */
 public class WormholeApplication extends PApplet {
 	private static final int BACKGROUND = 64;
@@ -47,7 +46,7 @@ public class WormholeApplication extends PApplet {
 
 	private Numberbox ledIdx;
 	private Numberbox ledSegmentNum;
-	protected LEDs lights; // The low level LEDs
+	// protected LEDs lights; // The low level LEDs
 	protected Kinect kinect; // The Kinect
 
 	private RadioButton regionSelector;
@@ -82,7 +81,7 @@ public class WormholeApplication extends PApplet {
 	private Matrix soundMatrix;
 
 	public void setup() {
-		lights = new LEDs(this);
+		// lights = new LEDs(this);
 		kinect = new Kinect(this);
 
 		setupController();
@@ -149,10 +148,10 @@ public class WormholeApplication extends PApplet {
 		newRegionText = cp5.addTextfield("", 30, 220, 200, 30);
 		messageText = cp5.addTextarea("message", "", 30, 260, 300, 30);
 
-		soundMatrix = cp5.addMatrix("soundMatrix").setPosition(30, 440)
-				.setSize(400, 200).setGrid(40, 20).setGap(1, 1).setInterval(10)
-				.setMode(ControlP5.MULTIPLES).setColorBackground(color(120))
-				.setBackground(color(40));
+		// soundMatrix = cp5.addMatrix("soundMatrix").setPosition(30, 440)
+		// .setSize(400, 200).setGrid(40, 20).setGap(1, 1).setInterval(10)
+		// .setMode(ControlP5.MULTIPLES).setColorBackground(color(120))
+		// .setBackground(color(40));
 	}
 
 	public void soundMatrix(int x, int y) {
@@ -179,6 +178,12 @@ public class WormholeApplication extends PApplet {
 	@Override
 	public void draw() {
 		background(BACKGROUND);
+		// updateLights(this.lights);
+		kinect.kinect.update();
+	}
+
+	@SuppressWarnings("unused")
+	private void updateLights(LEDs lights) {
 		lights.clear();
 		int colorValue = cp.getColorValue();
 		for (int i = 0; i < (int) ledIdx.getValue(); i++) {
@@ -186,9 +191,6 @@ public class WormholeApplication extends PApplet {
 				lights.setLedDirect(j, i, colorValue);
 			}
 		}
-		// kinect.draw(this);
-		kinect.kinect.update();
-		// mouseInputHandler.draw(this, mouseX, mouseY);
 		lights.renderLights();
 		image(lights.image, 80, 700);
 	}
@@ -235,12 +237,12 @@ public class WormholeApplication extends PApplet {
 
 	private void loadState(String text) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	private void saveState(String text) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	private void createNewRegion(String name) {
@@ -248,10 +250,10 @@ public class WormholeApplication extends PApplet {
 				|| regionSelector.getItem(name) != null) {
 			message("You have to choose a new, unique name");
 		} else {
-			DepthRegion dr = new DepthRegion(name,
-					position.getArrayValue(0), -position.getArrayValue(1),
-					size.getArrayValue(0), size.getArrayValue(1),
-					depth.getArrayValue(0), depth.getArrayValue(1));
+			DepthRegion dr = new DepthRegion(name, position.getArrayValue(0),
+					-position.getArrayValue(1), size.getArrayValue(0),
+					size.getArrayValue(1), depth.getArrayValue(0),
+					depth.getArrayValue(1));
 			addRegionSelector(name, regions.size());
 			regions.add(dr);
 			selectedRegionId = regions.size() - 1;
@@ -314,35 +316,49 @@ public class WormholeApplication extends PApplet {
 			cam.reset();
 		}
 
+		int profIdx = 0;
+		long lastTime = 0;
+
 		public void draw() {
-			if (updateKinect.getValue() > 0.5f) {
-				background(0);
-				rotateX(radians(180f));
-				stroke(255);
-				PVector[] depthPoints = kinect.kinect.depthMapRealWorld();
-				DepthRegion selectedRegion = getSelectedRegion();
-				for (int i = 0; i < depthPoints.length; i = i + 10) {
-					PVector pv = depthPoints[i];
-					if (selectedRegion != null
-							&& selectedRegion.consider(pv) != -1) {
-						stroke(ACTIVE_REGION_COLOR);
-					} else {
-						stroke(255);
-					}
+			if (profIdx % 10 == 0) {
+				profIdx = 0;
+				System.out.println("3D FPS: "
+						+ (1000 / (System.currentTimeMillis() - lastTime)));
+			}
+			lastTime = System.currentTimeMillis();
+			boolean doDraw = updateKinect.getValue() > 0.5f;
+			background(0);
+			rotateX(radians(180f));
+			stroke(255);
+			PVector[] depthPoints = kinect.kinect.depthMapRealWorld();
+
+			for (int i = 0; i < depthPoints.length; i = i + 7) {
+				PVector pv = depthPoints[i];
+				int[] segments = new int[regions.size()];
+				for (int j = 0; j < regions.size(); j++) {
+					segments[j] = regions.get(i).consider(pv);
+				}
+				if (doDraw) {
+					getPointColor(regions);
 					point(pv.x, pv.y, pv.z);
 				}
-				// Represent the kinect
-				noFill();
-				box(40f, 10f, 20f);
-				translate(0, -10, 0);
-				box(20f, 10f, 20f);
-				// Draw the regions
-				translate(0, 10, 0);
-				for (int regionId = 0; regionId < regions.size(); regionId++) {
-					DepthRegion region = regions.get(regionId);
-					region.draw(this, selectedRegionId == regionId);
-				}
 			}
+			// Represent the kinect
+			noFill();
+			box(40f, 10f, 20f);
+			translate(0, -10, 0);
+			box(20f, 10f, 20f);
+			// Draw the regions
+			translate(0, 10, 0);
+			for (int regionId = 0; regionId < regions.size(); regionId++) {
+				DepthRegion region = regions.get(regionId);
+				region.draw(this, selectedRegionId == regionId);
+			}
+		}
+
+		private void getPointColor(List<DepthRegion> regions) {
+			
+			
 		}
 
 		public PointCloudFrame(int theWidth, int theHeight) {
