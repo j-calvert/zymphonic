@@ -24,6 +24,14 @@ public class DepthRegion {
 	public float x, y, z, w, h, d;
 
 	@JsonIgnore
+	public boolean isSelected;
+	@JsonIgnore
+	public int selectedSegment;
+	
+	@JsonIgnore // This thing changes point by point (by call to consider).
+	public int pointSegment;
+	
+	@JsonIgnore
 	public boolean[] isHit = new boolean[MAX_SECTIONS],
 			wasHit = new boolean[MAX_SECTIONS];
 
@@ -56,7 +64,8 @@ public class DepthRegion {
 				if (pv.z < z + d * (i + 1)) {
 					// All the internal processing we do for now.
 					isHit[i] = true;
-					return i;
+					pointSegment = i;
+					return pointSegment;
 				}
 			}
 		}
