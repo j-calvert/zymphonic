@@ -11,6 +11,8 @@ import processing.core.PVector;
 import com.recreationallightandmagic.zymphonic.processing.input.DepthRegion;
 import com.recreationallightandmagic.zymphonic.processing.input.Kinect;
 import com.recreationallightandmagic.zymphonic.processing.lights.LEDs;
+import com.recreationallightandmagic.zymphonic.processing.persist.SaverLoader;
+import com.recreationallightandmagic.zymphonic.processing.persist.WormholeState;
 
 import controlP5.Button;
 import controlP5.ColorPicker;
@@ -95,6 +97,17 @@ public class WormholeApplication extends PApplet {
 	}
 
 	private void setupController() {
+		if (cp5 != null) {
+			if (regionSelector != null) {
+				for (Toggle t : regionSelector.getItems()) {
+					t.remove();
+				}
+				regionSelector.remove();
+				cp5 = null;
+			}
+		}
+		selectedRegionId = -1;
+		selectedSegmentId = -1;
 		cp5 = new ControlP5(this);
 		cp5.setFont(new ControlFont(createFont("Arial", 12, true), 12));
 
@@ -121,7 +134,15 @@ public class WormholeApplication extends PApplet {
 				.setSize(100, 14).setRange(0, LEDs.NUM_LIGHT_STRIPS - 1)
 				.setValue(0).setDirection(Controller.HORIZONTAL);
 
-		regionSelector = newRegionRadioButtons();
+		regionSelector = cp5.addRadioButton("radioButton").setPosition(20, 160)
+				.setSize(20, 20).setColorForeground(color(120))
+				.setCaptionLabel("Regions").setColorActive(ACTIVE_REGION_COLOR)
+				.setColorLabel(color(255)).setItemsPerRow(5)
+				.setSpacingColumn(80);
+		int i = 0;
+		for (DepthRegion region : regions) {
+			addRegionSelector(regionSelector, region.name, i++);
+		}
 
 		position = cp5
 				.addSlider2D("\nposition")
@@ -159,21 +180,13 @@ public class WormholeApplication extends PApplet {
 		System.out.println("Triggered sound matrix at x,y = " + x + ", " + y);
 	}
 
-	public void addRegionSelector(String name, int id) {
-		RadioButton t = regionSelector.addItem(name, id);
+	public void addRegionSelector(RadioButton button, String name, int id) {
+		RadioButton t = button.addItem(name, id);
 		t.getCaptionLabel().getStyle().moveMargin(-7, 0, 0, -3);
 		t.getCaptionLabel().getStyle().movePadding(7, 0, 0, 3);
 		t.getCaptionLabel().getStyle().backgroundWidth = 45;
 		t.getCaptionLabel().getStyle().backgroundHeight = 13;
 		regionSelector.activate(name);
-	}
-
-	private RadioButton newRegionRadioButtons() {
-		return cp5.addRadioButton("radioButton").setPosition(20, 160)
-				.setSize(20, 20).setColorForeground(color(120))
-				.setCaptionLabel("Regions").setColorActive(ACTIVE_REGION_COLOR)
-				.setColorLabel(color(255)).setItemsPerRow(5)
-				.setSpacingColumn(80);
 	}
 
 	@Override
@@ -208,8 +221,6 @@ public class WormholeApplication extends PApplet {
 			if (depthRegion != null) {
 				depthRegion.z = depth.getArrayValue(0);
 				depthRegion.d = depth.getArrayValue(1);
-				System.out.println("Depths: " + depthRegion.z + " "
-						+ depthRegion.d);
 			}
 		} else if (c.isFrom(position)) {
 			DepthRegion depthRegion = getSelectedRegion();
@@ -234,13 +245,37 @@ public class WormholeApplication extends PApplet {
 	}
 
 	private void loadState(String text) {
-		// TODO Auto-generated method stub
-		
+		try {
+			WormholeState state = SaverLoader.load(text);
+			setupState(state);
+			setupController();
+		} catch (RuntimeException e) {
+			message(e.getMessage());
+		} catch (Exception e) {
+			e.printStackTrace();
+			message(e.getMessage());
+		}
 	}
 
-	private void saveState(String text) {
-		// TODO Auto-generated method stub
-		
+	private void setupState(WormholeState state) {
+		this.regions = state.regions;
+	}
+
+	private void saveState(String filename) {
+		try {
+			SaverLoader.save(filename, getState());
+		} catch (RuntimeException e) {
+			message(e.getMessage());
+		} catch (Exception e) {
+			e.printStackTrace();
+			message(e.getMessage());
+		}
+	}
+
+	private WormholeState getState() {
+		WormholeState ret = new WormholeState();
+		ret.regions = regions;
+		return ret;
 	}
 
 	private void createNewRegion(String name) {
@@ -248,11 +283,11 @@ public class WormholeApplication extends PApplet {
 				|| regionSelector.getItem(name) != null) {
 			message("You have to choose a new, unique name");
 		} else {
-			DepthRegion dr = new DepthRegion(name,
-					position.getArrayValue(0), -position.getArrayValue(1),
-					size.getArrayValue(0), size.getArrayValue(1),
-					depth.getArrayValue(0), depth.getArrayValue(1));
-			addRegionSelector(name, regions.size());
+			DepthRegion dr = new DepthRegion(name, position.getArrayValue(0),
+					-position.getArrayValue(1), size.getArrayValue(0),
+					size.getArrayValue(1), depth.getArrayValue(0),
+					depth.getArrayValue(1));
+			addRegionSelector(regionSelector, name, regions.size());
 			regions.add(dr);
 			selectedRegionId = regions.size() - 1;
 		}
@@ -284,6 +319,8 @@ public class WormholeApplication extends PApplet {
 			messageText.setText(string);
 		}
 	}
+
+	// Point cloud view frame stuff from here on
 
 	PointCloudFrame addViewerFrame(String name, int width, int height) {
 		Frame f = new Frame(name);

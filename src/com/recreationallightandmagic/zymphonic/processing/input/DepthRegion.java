@@ -20,16 +20,18 @@ public class DepthRegion {
 	private static boolean[] ZEROS = new boolean[MAX_SECTIONS];
 
 	public String name;
-	// Upper left corner, nearest, and height, width and depth array
+	// Position, width, height, depth
 	public float x, y, z, w, h, d;
-	
+
 	@JsonIgnore
 	public boolean[] isHit = new boolean[MAX_SECTIONS],
 			wasHit = new boolean[MAX_SECTIONS];
 
+	public DepthRegion() {
+	}// For Jackson
 
-	public DepthRegion(String name, float x, float y, float w,
-			float h, float z, float d) {
+	public DepthRegion(String name, float x, float y, float w, float h,
+			float z, float d) {
 		super();
 		this.name = name;
 		this.x = x;
