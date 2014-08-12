@@ -5,12 +5,13 @@ package com.recreationallightandmagic.zymphonic.processing;
  * configured per machine and or physical installation.
  */
 public class Constants {
-	
-	// Only needed (at this time) for absolute path to sound files via
-	// Wormhole.createInput
-	public static final String SAMPLE_DIRECTORY = "/home/"
-			+ System.getProperty("user.name")
-			+ "/workspace/zymphonic/soundSamples/";
+
+	public static final String PROJECT_DIRECTORY = "/home/"
+			+ System.getProperty("user.name") + "/workspace/zymphonic/";
+	public static final String SAMPLE_DIRECTORY = PROJECT_DIRECTORY
+			+ "soundSamples/";
+	public static final String WORMHOLE_STATE_DIRECTORY = PROJECT_DIRECTORY
+			+ "savedStates/";
 
 	// new int[] { applet.color(255, 0, 0),
 	// applet.color(0, 255, 0), applet.color(0, 0, 255),

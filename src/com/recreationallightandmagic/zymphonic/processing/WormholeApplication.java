@@ -1,6 +1,10 @@
 package com.recreationallightandmagic.zymphonic.processing;
 
 import java.awt.Frame;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +17,7 @@ import com.recreationallightandmagic.zymphonic.processing.input.Kinect;
 import com.recreationallightandmagic.zymphonic.processing.lights.LEDs;
 import com.recreationallightandmagic.zymphonic.processing.persist.SaverLoader;
 import com.recreationallightandmagic.zymphonic.processing.persist.WormholeState;
+import com.recreationallightandmagic.zymphonic.processing.sound.SoundSamples;
 
 import controlP5.Button;
 import controlP5.ColorPicker;
@@ -27,6 +32,7 @@ import controlP5.Slider2D;
 import controlP5.Textarea;
 import controlP5.Textfield;
 import controlP5.Toggle;
+import ddf.minim.Minim;
 
 /**
  * Top level applet class that runs the entire application. This has only GUI
@@ -34,11 +40,12 @@ import controlP5.Toggle;
  * 
  */
 public class WormholeApplication extends PApplet {
+	private static final int SAMPLE_MATRIX_WIDTH = 40;
 	private static final int BACKGROUND = 64;
 	private static final float POSITION_SCALE = 500f; // Scale of position
 														// slider
 	private static final float RATIO = 640f / 480;
-	private static final int ACTIVE_REGION_COLOR = Constants.basicColors[4];
+	private static final int ACTIVE_REGION_COLOR = Constants.basicColors[0];
 
 	private static final long serialVersionUID = 1L;
 
@@ -81,10 +88,14 @@ public class WormholeApplication extends PApplet {
 
 	private PointCloudFrame viewerFrame;
 	private Matrix soundMatrix;
+	private SoundSamples soundSamples;
 
 	public void setup() {
 		// lights = new LEDs(this);
 		kinect = new Kinect(this);
+		// Important that this comes before setupController (since we create the
+		// soundMatrix based on this)
+		soundSamples = new SoundSamples(new Minim(this), SAMPLE_MATRIX_WIDTH);
 
 		setupController();
 		viewerFrame = addViewerFrame("Kinect 1", 640, 480);
@@ -95,6 +106,10 @@ public class WormholeApplication extends PApplet {
 
 	}
 
+	/**
+	 * @param numSamples
+	 *            The number of sound samples (used to size the soundMatrix)
+	 */
 	private void setupController() {
 		if (cp5 != null) {
 			if (regionSelector != null) {
@@ -169,14 +184,26 @@ public class WormholeApplication extends PApplet {
 		newRegionText = cp5.addTextfield("", 30, 220, 200, 30);
 		messageText = cp5.addTextarea("message", "", 30, 260, 300, 30);
 
-		// soundMatrix = cp5.addMatrix("soundMatrix").setPosition(30, 440)
-		// .setSize(400, 200).setGrid(40, 20).setGap(1, 1).setInterval(10)
-		// .setMode(ControlP5.MULTIPLES).setColorBackground(color(120))
-		// .setBackground(color(40));
+		int h = soundSamples.getNameGrid()[0].length;
+		int w = soundSamples.getNameGrid().length;
+		soundMatrix = cp5.addMatrix("soundMatrix").setPosition(30, 440)
+				.setSize(10 * w, 10 * h).setGrid(w, h).setGap(1, 1)
+				.setInterval(10).setMode(ControlP5.MULTIPLES)
+				.setColorBackground(color(120)).setBackground(color(40));
 	}
 
 	public void soundMatrix(int x, int y) {
 		System.out.println("Triggered sound matrix at x,y = " + x + ", " + y);
+	}
+
+	@Override
+	public InputStream createInput(String fileName) {
+		try {
+			return new FileInputStream(new File(Constants.SAMPLE_DIRECTORY + fileName));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
 	}
 
 	public void addRegionSelector(RadioButton button, String name, int id) {
@@ -238,12 +265,7 @@ public class WormholeApplication extends PApplet {
 			}
 		} else if (c.isFrom(resetCam)) {
 			viewerFrame.reset();
-		} else if (c.isFrom(soundMatrix)) {
-			System.out.println("Fielding from soundMatrix "
-					+ soundMatrix.getArrayValue(0) + " "
-					+ soundMatrix.getArrayValue(1));
 		}
-
 	}
 
 	private void loadState(String text) {
@@ -357,12 +379,15 @@ public class WormholeApplication extends PApplet {
 		long lastTime = 0;
 
 		public void draw() {
-			if (profIdx % 10 == 0) {
+			if (profIdx % 100 == 0) {
 				profIdx = 0;
-				System.out.println("3D FPS: "
-						+ (1000 / (System.currentTimeMillis() - lastTime)));
+				System.out
+						.println("3D FPS: "
+								+ (1000 * 100 / (System.currentTimeMillis() - lastTime)));
+				lastTime = System.currentTimeMillis();
 			}
-			lastTime = System.currentTimeMillis();
+			profIdx++;
+
 			boolean doDraw = updateKinect.getValue() > 0.5f;
 			background(0);
 			rotateX(radians(180f));
@@ -373,7 +398,7 @@ public class WormholeApplication extends PApplet {
 				PVector pv = depthPoints[i];
 				int[] segments = new int[regions.size()];
 				for (int j = 0; j < regions.size(); j++) {
-					segments[j] = regions.get(i).consider(pv);
+					segments[j] = regions.get(j).consider(pv);
 				}
 				if (doDraw) {
 					getPointColor(regions);
@@ -394,8 +419,7 @@ public class WormholeApplication extends PApplet {
 		}
 
 		private void getPointColor(List<DepthRegion> regions) {
-			
-			
+
 		}
 
 		public PointCloudFrame(int theWidth, int theHeight) {
