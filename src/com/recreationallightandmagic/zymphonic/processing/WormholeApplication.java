@@ -35,8 +35,7 @@ import controlP5.Toggle;
 import ddf.minim.Minim;
 
 /**
- * Top level applet class that runs the entire application. This has only GUI
- * related stuff, everything else is based out of WormholeCore.
+ * Top level applet class that runs the entire application.
  * 
  */
 public class WormholeApplication extends PApplet {
@@ -124,8 +123,15 @@ public class WormholeApplication extends PApplet {
 					t.remove();
 				}
 				regionSelector.remove();
-				cp5 = null;
 			}
+			if (soundMatrix != null) {
+				soundMatrix.removeBehavior();
+				soundMatrix.removeCallback();
+				soundMatrix.stop();
+				soundMatrix.remove();
+				soundMatrix = null;
+			}
+			cp5 = null;
 		}
 		selectedRegionId = -1;
 		selectedSegmentId = -1;
@@ -220,11 +226,14 @@ public class WormholeApplication extends PApplet {
 	// a matrix button push. Would prefer to call it 'triggerSound'.
 	public void soundMatrix(int x, int y) {
 		try {
-			String soundName = soundSamples.getNameGrid()[x][y];
-			triggerSound(soundName);
-			soundMatrix.set(x, y, false);
+			if (soundMatrix.get(x, y)) {
+				String soundName = soundSamples.getNameGrid()[x][y];
+				triggerSound(soundName);
+				soundMatrix.set(x, y, false);
+			}
 		} catch (Exception e) {
 			message("Something went wrong getting sound for element in soundMatrix");
+			e.printStackTrace();
 		}
 		System.out.println("Triggered sound matrix at x,y = " + x + ", " + y);
 	}
@@ -286,6 +295,8 @@ public class WormholeApplication extends PApplet {
 		} else if (c.isFrom(saveButton)) {
 			saveState(newRegionText.getText());
 		} else if (c.isFrom(loadButton)) {
+			soundMatrix.clear();
+			soundMatrix = null;
 			loadState(newRegionText.getText());
 		} else if (c.isFrom(segmentSelector)) {
 			selectedSegmentId = (int) segmentSelector.getValue();
@@ -295,6 +306,7 @@ public class WormholeApplication extends PApplet {
 			viewerFrame.reset();
 		} else if (c.isFrom(stopSound)) {
 			soundSamples.stopAll();
+
 		} else {
 			DepthRegion depthRegion = getSelectedRegion();
 			if (depthRegion != null) {
@@ -308,6 +320,7 @@ public class WormholeApplication extends PApplet {
 					depthRegion.w = size.getArrayValue(0);
 					depthRegion.h = size.getArrayValue(1);
 				} else if (c.isFrom(playSound)) {
+					System.out.println("Hey!");
 					triggerSound(depthRegion.getSoundName(selectedSegmentId));
 				} else if (c.isFrom(chooseSound)) {
 					depthRegion.setSoundName(selectedSegmentId,
