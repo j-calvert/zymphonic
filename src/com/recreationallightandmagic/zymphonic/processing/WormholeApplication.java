@@ -45,7 +45,9 @@ public class WormholeApplication extends PApplet {
 	private static final float POSITION_SCALE = 500f; // Scale of position
 														// slider
 	private static final float RATIO = 640f / 480;
-	private static final int ACTIVE_REGION_COLOR = Constants.basicColors[0];
+	public static final int ACTIVE_REGION_COLOR = Constants.basicColors[0];
+	public static final int ACTIVE_SEGMENT_COLOR = Constants.basicColors[1];
+	public static final int ACTIVE_BOTH_COLOR = Constants.basicColors[3];
 
 	private static final long serialVersionUID = 1L;
 
@@ -59,6 +61,7 @@ public class WormholeApplication extends PApplet {
 	protected Kinect kinect; // The Kinect
 
 	private RadioButton regionSelector;
+	private RadioButton segmentSelector;
 
 	private Slider2D position;
 
@@ -89,6 +92,10 @@ public class WormholeApplication extends PApplet {
 	private PointCloudFrame viewerFrame;
 	private Matrix soundMatrix;
 	private SoundSamples soundSamples;
+	private String selectedSoundName;
+	private Button stopSound;
+	private Button chooseSound;
+	private Button playSound;
 
 	public void setup() {
 		// lights = new LEDs(this);
@@ -131,6 +138,12 @@ public class WormholeApplication extends PApplet {
 				.setValue(true);
 		resetCam = cp5.addButton("reset cam").setPosition(10, 80)
 				.setSize(100, 20);
+		stopSound = cp5.addButton("stop sound").setPosition(120, 80)
+				.setSize(100, 20);
+		chooseSound = cp5.addButton("choose sound").setPosition(230, 80)
+				.setSize(100, 20);
+		playSound = cp5.addButton("play sound").setPosition(340, 80)
+				.setSize(100, 20);
 
 		// create a color picker
 		cp = cp5.addColorPicker("picker").setPosition(80, 10)
@@ -148,14 +161,25 @@ public class WormholeApplication extends PApplet {
 				.setSize(100, 14).setRange(0, LEDs.NUM_LIGHT_STRIPS - 1)
 				.setValue(0).setDirection(Controller.HORIZONTAL);
 
-		regionSelector = cp5.addRadioButton("radioButton").setPosition(20, 160)
-				.setSize(20, 20).setColorForeground(color(120))
-				.setCaptionLabel("Regions").setColorActive(ACTIVE_REGION_COLOR)
-				.setColorLabel(color(255)).setItemsPerRow(5)
-				.setSpacingColumn(80);
+		segmentSelector = cp5.addRadioButton("segmentRadioButton")
+				.setPosition(20, 120).setSize(15, 15)
+				.setColorForeground(color(120))
+				.setCaptionLabel("Segments (zones)")
+				.setColorActive(ACTIVE_BOTH_COLOR).setColorLabel(color(255))
+				.setItemsPerRow(8).setSpacingColumn(32);
+		for (int i = 0; i < DepthRegion.MAX_SEGMENTS; i++) {
+			addSelectorItem(segmentSelector, "s" + i, i);
+		}
+
+		regionSelector = cp5.addRadioButton("regionRadioButton")
+				.setPosition(20, 160).setSize(20, 20)
+				.setColorForeground(color(120)).setCaptionLabel("Regions")
+				.setColorActive(ACTIVE_REGION_COLOR).setColorLabel(color(255))
+				.setItemsPerRow(5).setSpacingColumn(80);
+
 		int i = 0;
 		for (DepthRegion region : regions) {
-			addRegionSelector(regionSelector, region.name, i++);
+			addSelectorItem(regionSelector, region.name, i++);
 		}
 
 		position = cp5
@@ -192,27 +216,47 @@ public class WormholeApplication extends PApplet {
 				.setColorBackground(color(120)).setBackground(color(40));
 	}
 
+	// Kinda a generic name, but is the only way I've figured out how to 'read'
+	// a matrix button push. Would prefer to call it 'triggerSound'.
 	public void soundMatrix(int x, int y) {
+		try {
+			String soundName = soundSamples.getNameGrid()[x][y];
+			triggerSound(soundName);
+			soundMatrix.set(x, y, false);
+		} catch (Exception e) {
+			message("Something went wrong getting sound for element in soundMatrix");
+		}
 		System.out.println("Triggered sound matrix at x,y = " + x + ", " + y);
+	}
+
+	private void triggerSound(String soundName) {
+		if (soundName != null) {
+			selectedSoundName = soundName;
+			soundSamples.getSample(soundName).trigger();
+			message("Selected Sound: " + selectedSoundName);
+		} else {
+			message("Computer says no (sound there).  Selected sound still "
+					+ selectedSoundName);
+		}
 	}
 
 	@Override
 	public InputStream createInput(String fileName) {
 		try {
-			return new FileInputStream(new File(Constants.SAMPLE_DIRECTORY + fileName));
+			return new FileInputStream(new File(Constants.SAMPLE_DIRECTORY
+					+ fileName));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
 	}
 
-	public void addRegionSelector(RadioButton button, String name, int id) {
+	public void addSelectorItem(RadioButton button, String name, int id) {
 		RadioButton t = button.addItem(name, id);
 		t.getCaptionLabel().getStyle().moveMargin(-7, 0, 0, -3);
 		t.getCaptionLabel().getStyle().movePadding(7, 0, 0, 3);
 		t.getCaptionLabel().getStyle().backgroundWidth = 45;
 		t.getCaptionLabel().getStyle().backgroundHeight = 13;
-		regionSelector.activate(name);
 	}
 
 	@Override
@@ -243,28 +287,33 @@ public class WormholeApplication extends PApplet {
 			saveState(newRegionText.getText());
 		} else if (c.isFrom(loadButton)) {
 			loadState(newRegionText.getText());
+		} else if (c.isFrom(segmentSelector)) {
+			selectedSegmentId = (int) segmentSelector.getValue();
 		} else if (c.isFrom(regionSelector)) {
 			switchToRegion((int) regionSelector.getValue());
-		} else if (c.isFrom(depth)) {
-			DepthRegion depthRegion = getSelectedRegion();
-			if (depthRegion != null) {
-				depthRegion.z = depth.getArrayValue(0);
-				depthRegion.d = depth.getArrayValue(1);
-			}
-		} else if (c.isFrom(position)) {
-			DepthRegion depthRegion = getSelectedRegion();
-			if (depthRegion != null) {
-				depthRegion.x = position.getArrayValue(0);
-				depthRegion.y = -position.getArrayValue(1);
-			}
-		} else if (c.isFrom(size)) {
-			DepthRegion depthRegion = getSelectedRegion();
-			if (depthRegion != null) {
-				depthRegion.w = size.getArrayValue(0);
-				depthRegion.h = size.getArrayValue(1);
-			}
 		} else if (c.isFrom(resetCam)) {
 			viewerFrame.reset();
+		} else if (c.isFrom(stopSound)) {
+			soundSamples.stopAll();
+		} else {
+			DepthRegion depthRegion = getSelectedRegion();
+			if (depthRegion != null) {
+				if (c.isFrom(depth)) {
+					depthRegion.z = depth.getArrayValue(0);
+					depthRegion.d = depth.getArrayValue(1);
+				} else if (c.isFrom(position)) {
+					depthRegion.x = position.getArrayValue(0);
+					depthRegion.y = -position.getArrayValue(1);
+				} else if (c.isFrom(size)) {
+					depthRegion.w = size.getArrayValue(0);
+					depthRegion.h = size.getArrayValue(1);
+				} else if (c.isFrom(playSound)) {
+					triggerSound(depthRegion.getSoundName(selectedSegmentId));
+				} else if (c.isFrom(chooseSound)) {
+					depthRegion.setSoundName(selectedSegmentId,
+							selectedSoundName);
+				}
+			}
 		}
 	}
 
@@ -311,7 +360,8 @@ public class WormholeApplication extends PApplet {
 					-position.getArrayValue(1), size.getArrayValue(0),
 					size.getArrayValue(1), depth.getArrayValue(0),
 					depth.getArrayValue(1));
-			addRegionSelector(regionSelector, name, regions.size());
+			addSelectorItem(regionSelector, name, regions.size());
+			regionSelector.activate(name);
 			regions.add(dr);
 			selectedRegionId = regions.size() - 1;
 		}
@@ -360,6 +410,7 @@ public class WormholeApplication extends PApplet {
 	}
 
 	public class PointCloudFrame extends PApplet {
+		private static final int SACRIFICED_PV_RESOLUTION = 7;
 		private static final long serialVersionUID = 1L;
 		int w, h;
 		private PeasyCam cam;
@@ -394,14 +445,17 @@ public class WormholeApplication extends PApplet {
 			stroke(255);
 			PVector[] depthPoints = kinect.kinect.depthMapRealWorld();
 
-			for (int i = 0; i < depthPoints.length; i = i + 7) {
+			for (int i = 0; i < depthPoints.length; i = i
+					+ SACRIFICED_PV_RESOLUTION) {
 				PVector pv = depthPoints[i];
-				int[] segments = new int[regions.size()];
+				int[] segments = new int[DepthRegion.MAX_SEGMENTS];
 				for (int j = 0; j < regions.size(); j++) {
-					segments[j] = regions.get(j).consider(pv);
+					if (doDraw) {
+						// AND consider entails, accumulate color
+						segments[j] = regions.get(j).consider(pv);
+					}
 				}
 				if (doDraw) {
-					getPointColor(regions);
 					point(pv.x, pv.y, pv.z);
 				}
 			}
@@ -414,7 +468,8 @@ public class WormholeApplication extends PApplet {
 			translate(0, 10, 0);
 			for (int regionId = 0; regionId < regions.size(); regionId++) {
 				DepthRegion region = regions.get(regionId);
-				region.draw(this, selectedRegionId == regionId);
+				region.draw(this, selectedRegionId == regionId,
+						selectedSegmentId);
 			}
 		}
 

@@ -72,4 +72,9 @@ public class SoundSamples {
 		}
 	}
 
+	public void stopAll() {
+		for (AudioSample sample : sampleInstances.values()) {
+			sample.stop();
+		}
+	}
 }
