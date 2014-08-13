@@ -57,7 +57,7 @@ public class WormholeApplication extends PApplet {
 	private Numberbox ledIdx;
 	private Numberbox ledSegmentNum;
 	// protected LEDs lights; // The low level LEDs
-	protected Kinect kinect; // The Kinect
+	// protected Kinect kinect; // The Kinect
 
 	private RadioButton regionSelector;
 	private RadioButton segmentSelector;
@@ -77,18 +77,14 @@ public class WormholeApplication extends PApplet {
 	// The segment currently selected within the currently selected region.
 	private int selectedSegmentId = -1;
 
+	// A mess of members that comprise the control panel. TODO clean this up if
+	// you have time (but be careful, ControlP5 is incredibly fickle.
 	private Button newRegionButton;
-
 	private Textfield newRegionText;
-
 	private Textarea messageText;
-
 	private Button saveButton;
 	private Button loadButton;
-
 	private Button resetCam;
-
-	private PointCloudFrame viewerFrame;
 	private Matrix soundMatrix;
 	private SoundSamples soundSamples;
 	private String selectedSoundName;
@@ -96,9 +92,12 @@ public class WormholeApplication extends PApplet {
 	private Button chooseSound;
 	private Button playSound;
 
+	// The frame that we view the 3D stuff in.
+	private PointCloudFrame viewerFrame;
+
 	public void setup() {
 		// lights = new LEDs(this);
-		kinect = new Kinect(this);
+		// kinect = new Kinect(this);
 		// Important that this comes before setupController (since we create the
 		// soundMatrix based on this)
 		soundSamples = new SoundSamples(new Minim(this), SAMPLE_MATRIX_WIDTH);
@@ -112,27 +111,7 @@ public class WormholeApplication extends PApplet {
 
 	}
 
-	/**
-	 * @param numSamples
-	 *            The number of sound samples (used to size the soundMatrix)
-	 */
 	private void setupController() {
-		if (cp5 != null) {
-			if (regionSelector != null) {
-				for (Toggle t : regionSelector.getItems()) {
-					t.remove();
-				}
-				regionSelector.remove();
-			}
-			if (soundMatrix != null) {
-				soundMatrix.removeBehavior();
-				soundMatrix.removeCallback();
-				soundMatrix.stop();
-				soundMatrix.remove();
-				soundMatrix = null;
-			}
-			cp5 = null;
-		}
 		selectedRegionId = -1;
 		selectedSegmentId = -1;
 		cp5 = new ControlP5(this);
@@ -182,11 +161,6 @@ public class WormholeApplication extends PApplet {
 				.setColorForeground(color(120)).setCaptionLabel("Regions")
 				.setColorActive(ACTIVE_REGION_COLOR).setColorLabel(color(255))
 				.setItemsPerRow(5).setSpacingColumn(80);
-
-		int i = 0;
-		for (DepthRegion region : regions) {
-			addSelectorItem(regionSelector, region.name, i++);
-		}
 
 		position = cp5
 				.addSlider2D("\nposition")
@@ -272,7 +246,7 @@ public class WormholeApplication extends PApplet {
 	public void draw() {
 		background(BACKGROUND);
 		// updateLights(this.lights);
-		kinect.kinect.update();
+		// kinect.kinect.update();
 	}
 
 	@SuppressWarnings("unused")
@@ -295,8 +269,6 @@ public class WormholeApplication extends PApplet {
 		} else if (c.isFrom(saveButton)) {
 			saveState(newRegionText.getText());
 		} else if (c.isFrom(loadButton)) {
-			soundMatrix.clear();
-			soundMatrix = null;
 			loadState(newRegionText.getText());
 		} else if (c.isFrom(segmentSelector)) {
 			selectedSegmentId = (int) segmentSelector.getValue();
@@ -334,7 +306,25 @@ public class WormholeApplication extends PApplet {
 		try {
 			WormholeState state = SaverLoader.load(text);
 			setupState(state);
-			setupController();
+			if (regionSelector != null) {
+				for (Toggle t : regionSelector.getItems()) {
+					t.remove();
+				}
+				regionSelector.remove();
+			}
+
+			regionSelector = cp5.addRadioButton("regionRadioButton")
+					.setPosition(20, 160).setSize(20, 20)
+					.setColorForeground(color(120)).setCaptionLabel("Regions")
+					.setColorActive(ACTIVE_REGION_COLOR)
+					.setColorLabel(color(255)).setItemsPerRow(5)
+					.setSpacingColumn(80);
+
+			int i = 0;
+			for (DepthRegion region : regions) {
+				addSelectorItem(regionSelector, region.name, i++);
+			}
+
 		} catch (RuntimeException e) {
 			message(e.getMessage());
 		} catch (Exception e) {
@@ -456,7 +446,7 @@ public class WormholeApplication extends PApplet {
 			background(0);
 			rotateX(radians(180f));
 			stroke(255);
-			PVector[] depthPoints = kinect.kinect.depthMapRealWorld();
+			PVector[] depthPoints = new PVector[0];// kinect.kinect.depthMapRealWorld();
 
 			for (int i = 0; i < depthPoints.length; i = i
 					+ SACRIFICED_PV_RESOLUTION) {
