@@ -57,6 +57,15 @@ public class Kinect {
 		}
 	}
 
+	/**
+	 * A mapping from the real-world coordinate system of a Kinect, to LED strip
+	 * indexes
+	 */
+	// TODO Implement me
+	int getLedIdx(int ledStripId, float depth) {
+		return -1;
+	}
+
 	private void drawUsers(PApplet applet, int[] userList) {
 		for (int i = 0; i < userList.length; i++) {
 			if (kinect.isTrackingSkeleton(userList[i])) {

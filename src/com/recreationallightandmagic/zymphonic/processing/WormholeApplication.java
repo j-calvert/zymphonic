@@ -1,10 +1,6 @@
 package com.recreationallightandmagic.zymphonic.processing;
 
 import java.awt.Frame;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +11,7 @@ import processing.core.PVector;
 import com.recreationallightandmagic.zymphonic.processing.input.DepthRegion;
 import com.recreationallightandmagic.zymphonic.processing.input.Kinect;
 import com.recreationallightandmagic.zymphonic.processing.lights.LEDs;
+import com.recreationallightandmagic.zymphonic.processing.persist.MinimFilesystemHandler;
 import com.recreationallightandmagic.zymphonic.processing.persist.SaverLoader;
 import com.recreationallightandmagic.zymphonic.processing.persist.WormholeState;
 import com.recreationallightandmagic.zymphonic.processing.sound.SoundSamples;
@@ -50,25 +47,9 @@ public class WormholeApplication extends PApplet {
 
 	private static final long serialVersionUID = 1L;
 
-	ControlP5 cp5;
-	private Toggle updateKinect;
-	private ColorPicker cp;
-
-	private Numberbox ledIdx;
-	private Numberbox ledSegmentNum;
+	// I left the thing out to be stepped on. and maybe i also stepped on. shit
 	// protected LEDs lights; // The low level LEDs
-	// protected Kinect kinect; // The Kinect
-
-	private RadioButton regionSelector;
-	private RadioButton segmentSelector;
-
-	private Slider2D position;
-
-	private Slider2D size;
-
-	private Slider2D depth;
-
-	private List<DepthRegion> regions = new ArrayList<DepthRegion>();
+	protected Kinect kinect; // The Kinect
 
 	// The region currently selected for editing (e.g. one that was just
 	// created)
@@ -78,7 +59,18 @@ public class WormholeApplication extends PApplet {
 	private int selectedSegmentId = -1;
 
 	// A mess of members that comprise the control panel. TODO clean this up if
-	// you have time (but be careful, ControlP5 is incredibly fickle.
+	// you have time (but be careful, ControlP5 is fickle).
+	private ControlP5 cp5;
+	private Toggle updateKinect;
+	private ColorPicker cp;
+	private Numberbox ledIdx;
+	private Numberbox ledSegmentNum;
+	private RadioButton regionSelector;
+	private RadioButton segmentSelector;
+	private Slider2D position;
+	private Slider2D size;
+	private Slider2D depth;
+	private List<DepthRegion> regions = new ArrayList<DepthRegion>();
 	private Button newRegionButton;
 	private Textfield newRegionText;
 	private Textarea messageText;
@@ -97,18 +89,17 @@ public class WormholeApplication extends PApplet {
 
 	public void setup() {
 		// lights = new LEDs(this);
-		// kinect = new Kinect(this);
+		kinect = new Kinect(this);
 		// Important that this comes before setupController (since we create the
 		// soundMatrix based on this)
-		soundSamples = new SoundSamples(new Minim(this), SAMPLE_MATRIX_WIDTH);
+		soundSamples = new SoundSamples(
+				new Minim(new MinimFilesystemHandler()), SAMPLE_MATRIX_WIDTH);
 
 		setupController();
 		viewerFrame = addViewerFrame("Kinect 1", 640, 480);
 
 		// *THE* UI !!!
 		size(640, 840);
-		background(64);
-
 	}
 
 	private void setupController() {
@@ -202,7 +193,7 @@ public class WormholeApplication extends PApplet {
 		try {
 			if (soundMatrix.get(x, y)) {
 				String soundName = soundSamples.getNameGrid()[x][y];
-				triggerSound(soundName);
+				this.viewerFrame.triggerSound(soundName);
 				soundMatrix.set(x, y, false);
 			}
 		} catch (Exception e) {
@@ -210,28 +201,6 @@ public class WormholeApplication extends PApplet {
 			e.printStackTrace();
 		}
 		System.out.println("Triggered sound matrix at x,y = " + x + ", " + y);
-	}
-
-	private void triggerSound(String soundName) {
-		if (soundName != null) {
-			selectedSoundName = soundName;
-			soundSamples.getSample(soundName).trigger();
-			message("Selected Sound: " + selectedSoundName);
-		} else {
-			message("Computer says no (sound there).  Selected sound still "
-					+ selectedSoundName);
-		}
-	}
-
-	@Override
-	public InputStream createInput(String fileName) {
-		try {
-			return new FileInputStream(new File(Constants.SAMPLE_DIRECTORY
-					+ fileName));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
 	}
 
 	public void addSelectorItem(RadioButton button, String name, int id) {
@@ -246,7 +215,7 @@ public class WormholeApplication extends PApplet {
 	public void draw() {
 		background(BACKGROUND);
 		// updateLights(this.lights);
-		// kinect.kinect.update();
+		kinect.kinect.update();
 	}
 
 	@SuppressWarnings("unused")
@@ -292,8 +261,12 @@ public class WormholeApplication extends PApplet {
 					depthRegion.w = size.getArrayValue(0);
 					depthRegion.h = size.getArrayValue(1);
 				} else if (c.isFrom(playSound)) {
-					System.out.println("Hey!");
-					triggerSound(depthRegion.getSoundName(selectedSegmentId));
+					String soundName = depthRegion
+							.getSoundName(selectedSegmentId);
+					if (soundName != null) {
+						System.out.println("Triggering " + soundName);
+						this.viewerFrame.triggerSound(soundName);
+					}
 				} else if (c.isFrom(chooseSound)) {
 					depthRegion.setSoundName(selectedSegmentId,
 							selectedSoundName);
@@ -429,6 +402,17 @@ public class WormholeApplication extends PApplet {
 			cam.reset();
 		}
 
+		public void triggerSound(String soundName) {
+			if (soundName != null) {
+				selectedSoundName = soundName;
+				soundSamples.getSample(soundName).trigger();
+				message("Selected Sound: " + selectedSoundName);
+			} else {
+				message("Computer says no (sound there).  Selected sound still "
+						+ selectedSoundName);
+			}
+		}
+
 		int profIdx = 0;
 		long lastTime = 0;
 
@@ -446,16 +430,19 @@ public class WormholeApplication extends PApplet {
 			background(0);
 			rotateX(radians(180f));
 			stroke(255);
-			PVector[] depthPoints = new PVector[0];// kinect.kinect.depthMapRealWorld();
+			// PVector[] depthPoints = new PVector[0];
+			PVector[] depthPoints = kinect.kinect.depthMapRealWorld();
 
 			for (int i = 0; i < depthPoints.length; i = i
 					+ SACRIFICED_PV_RESOLUTION) {
 				PVector pv = depthPoints[i];
 				int[] segments = new int[DepthRegion.MAX_SEGMENTS];
-				for (int j = 0; j < regions.size(); j++) {
+				for (int regionId = 0; regionId < regions.size(); regionId++) {
 					if (doDraw) {
 						// AND consider entails, accumulate color
-						segments[j] = regions.get(j).consider(pv);
+						segments[regionId] = regions.get(regionId).consider(
+								this, pv, selectedRegionId == regionId,
+								selectedSegmentId);
 					}
 				}
 				if (doDraw) {
@@ -471,7 +458,7 @@ public class WormholeApplication extends PApplet {
 			translate(0, 10, 0);
 			for (int regionId = 0; regionId < regions.size(); regionId++) {
 				DepthRegion region = regions.get(regionId);
-				region.draw(this, selectedRegionId == regionId,
+				region.postLoop(this, selectedRegionId == regionId,
 						selectedSegmentId);
 			}
 		}
