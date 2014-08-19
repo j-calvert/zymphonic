@@ -49,4 +49,23 @@ public class Constants {
 
 	}
 
+	public static void arrCp(int[] from, int[] to) {
+		for (int i = 0; i < from.length; i++) {
+			if(i >= to.length) {
+				return;
+			}
+			to[i] = from[i];
+		}
+	}
+	
+	public static void arrCp(float[] from, float[] to) {
+		for (int i = 0; i < from.length; i++) {
+			if(i >= to.length) {
+				return;
+			}
+			to[i] = from[i];
+		}
+	}
+	
+	
 }

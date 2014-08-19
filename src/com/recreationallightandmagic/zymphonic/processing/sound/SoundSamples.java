@@ -55,7 +55,7 @@ public class SoundSamples {
 	// http://stackoverflow.com/questions/221525/how-would-you-implement-an-lru-cache-in-java-6
 	private class LruCache extends LinkedHashMap<String, AudioSample> {
 		private static final long serialVersionUID = 1L;
-		private static final int SIZE = 30;
+		private static final int SIZE = 25;
 
 		public LruCache() {
 			super(SIZE + 1, 1.0f, true);

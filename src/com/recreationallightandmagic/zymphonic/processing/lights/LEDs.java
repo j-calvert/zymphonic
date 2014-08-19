@@ -55,11 +55,12 @@ public class LEDs {
 	// use of teensy board with shield.
 	public static final int NUM_LIGHT_SEGMENTS = 8;
 
-	public static final int NUM_LIGHT_STRIPS = NUM_LIGHT_SEGMENTS * STRIPS_PER_SEGMENT;
-	
+	public static final int NUM_LIGHT_STRIPS = NUM_LIGHT_SEGMENTS
+			* STRIPS_PER_SEGMENT;
+
 	// The thing we (re-)use in the low-level render method
-	public final PImage image = new PImage(
-			LEDS_PER_STRIP * STRIPS_PER_SEGMENT, NUM_LIGHT_SEGMENTS);
+	public final PImage image = new PImage(LEDS_PER_STRIP * STRIPS_PER_SEGMENT,
+			NUM_LIGHT_SEGMENTS);
 
 	public final LEDStrip[] ledStrips = new LEDStrip[NUM_LIGHT_STRIPS];
 
@@ -69,7 +70,19 @@ public class LEDs {
 		}
 	}
 
+	public void drawCursor(int ledStripNum, int ledIndex, int centerColor,
+			int outerColor) {
+		setLedDirect(ledStripNum, ledIndex, centerColor);
+		setLedDirect(ledStripNum, ledIndex - 1, outerColor);
+		setLedDirect(ledStripNum, ledIndex + 1, outerColor);
+		setLedDirect(ledStripNum, ledIndex - 2, outerColor);
+		setLedDirect(ledStripNum, ledIndex + 2, outerColor);
+	}
+
 	public void setLedDirect(int ledStripNum, int ledIndex, int color) {
+		if (ledIndex <= 0 || ledIndex >= LEDS_PER_STRIP) {
+			return;
+		}
 		ledStrips[ledStripNum].leds[ledIndex].color = color;
 	}
 
@@ -83,7 +96,7 @@ public class LEDs {
 		// delay(20);
 		System.out.println("Serial Ports List:");
 		System.out.println(Arrays.toString(list));
-		serialConfigure(applet, "/dev/ttyACM0"); // change these to your port
+		serialConfigure(applet, "/dev/ttyACM1"); // change these to your port
 													// names
 		// serialConfigure("/dev/ttyACM1");
 		if (errorCount > 0)
@@ -95,12 +108,13 @@ public class LEDs {
 	}
 
 	public void renderLights() {
-		
-		// This part pretty much precludes any zig zagging, but that's OK for this application
+
+		// This part pretty much precludes any zig zagging, but that's OK for
+		// this application
 		for (int stripNum = 0; stripNum < ledStrips.length; stripNum++) {
 			int row = stripNum / STRIPS_PER_SEGMENT;
 			int colOffset = (stripNum % STRIPS_PER_SEGMENT) * LEDS_PER_STRIP;
-			for(int j = 0; j < LEDS_PER_STRIP; j++) {
+			for (int j = 0; j < LEDS_PER_STRIP; j++) {
 				int thisColor = ledStrips[stripNum].leds[j].color;
 				image.set(colOffset + j, row, thisColor);
 			}
@@ -109,13 +123,13 @@ public class LEDs {
 		framerate = 30.0f; // TODO, how to read the frame rate???
 
 		for (int i = 0; i < numPorts; i++) {
-//			// copy a portion of the movie's image to the LED image
-//			int xoffset = percentage(image.width, ledArea[i].x);
-//			int yoffset = percentage(image.height, ledArea[i].y);
-//			int xwidth = percentage(image.width, ledArea[i].width);
-//			int yheight = percentage(image.height, ledArea[i].height);
-//			ledImage[i].copy(image, xoffset, yoffset, xwidth, yheight, 0, 0,
-//					ledImage[i].width, ledImage[i].height);
+			// // copy a portion of the movie's image to the LED image
+			// int xoffset = percentage(image.width, ledArea[i].x);
+			// int yoffset = percentage(image.height, ledArea[i].y);
+			// int xwidth = percentage(image.width, ledArea[i].width);
+			// int yheight = percentage(image.height, ledArea[i].height);
+			// ledImage[i].copy(image, xoffset, yoffset, xwidth, yheight, 0, 0,
+			// ledImage[i].width, ledImage[i].height);
 			// convert the LED image to raw data
 			byte[] ledData = new byte[(image.width * image.height * 3) + 3];
 			image2data(image, ledData, true);

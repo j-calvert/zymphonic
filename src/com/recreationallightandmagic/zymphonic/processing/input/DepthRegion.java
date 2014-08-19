@@ -1,5 +1,7 @@
 package com.recreationallightandmagic.zymphonic.processing.input;
 
+import static com.recreationallightandmagic.zymphonic.processing.Constants.arrCp;
+
 import org.codehaus.jackson.annotate.JsonIgnore;
 
 import processing.core.PApplet;
@@ -18,7 +20,8 @@ import com.recreationallightandmagic.zymphonic.processing.WormholeApplication;
 public class DepthRegion {
 
 	public static final int MAX_SEGMENTS = 16;
-	private static final int TRIGGER_POINT_COUNT_THRESHOLD = 4;
+	private static final float TRIGGER_POINT_COUNT_RATIO_THRESHOLD = 1.2f;
+	private static final float TRIGGER_POINT_COUNT_ABSOLUTE_THRESHOLD = 50;
 	private static int[] ZEROS = new int[MAX_SEGMENTS];
 
 	public String name;
@@ -57,10 +60,18 @@ public class DepthRegion {
 			int selectedSegment) {
 		if (pv.x > x - w / 2 && pv.x < x + w / 2 && pv.y > y - h / 2
 				&& pv.y < y + h / 2 && pv.z > z && pv.z < z + d * MAX_SEGMENTS) {
+			applet.stroke(WormholeApplication.ACTIVE_REGION_COLOR);
 			// It's in some segment.
 			for (int i = 0; i < MAX_SEGMENTS; i++) {
 				int pointColor = getPointColor(isSelected, selectedSegment, i);
 				if (pv.z < z + d * (i + 1)) {
+					if (i == selectedSegment) {
+						if (isSelected) {
+							applet.stroke(WormholeApplication.ACTIVE_BOTH_COLOR);
+						} else {
+							applet.stroke(WormholeApplication.ACTIVE_SEGMENT_COLOR);
+						}
+					}
 					// All the internal processing we do for now.
 					applet.stroke(pointColor);
 					pointCount[i]++;
@@ -75,10 +86,13 @@ public class DepthRegion {
 			boolean isSelected, int selectedSegment) {
 		for (int i = 0; i < MAX_SEGMENTS; i++) {
 			int pointColor = getPointColor(isSelected, selectedSegment, i);
-			sound3dApplet.fill(pointColor,
-					ratio(pointCount[i], lastPointCount[i]));
-			if (pointCount[i] > TRIGGER_POINT_COUNT_THRESHOLD
-					* lastPointCount[i]) {
+			// sound3dApplet.fill(pointColor,
+			// ratio(pointCount[i], lastPointCount[i]));
+			if (pointCount[i] >= TRIGGER_POINT_COUNT_ABSOLUTE_THRESHOLD
+					&& lastPointCount[i] < TRIGGER_POINT_COUNT_RATIO_THRESHOLD) {
+				System.out.println("Triggering sound for region " + name
+						+ ", segment " + i + " having gone from "
+						+ lastPointCount[i] + " to " + pointCount[i]);
 				sound3dApplet.triggerSound(soundNames[i]);
 			}
 		}
@@ -87,7 +101,7 @@ public class DepthRegion {
 	}
 
 	private float ratio(int i, int j) {
-		if (i > TRIGGER_POINT_COUNT_THRESHOLD) {
+		if (i > TRIGGER_POINT_COUNT_RATIO_THRESHOLD) {
 			return 0.5f;
 		} else {
 			return 0f;
@@ -105,11 +119,6 @@ public class DepthRegion {
 		applet.popMatrix();
 	}
 
-	private static void arrCp(int[] from, int[] to) {
-		for (int i = 0; i < MAX_SEGMENTS; i++) {
-			to[i] = from[i];
-		}
-	}
 
 	private int getPointColor(boolean isSelected, int selectedSegment, int i) {
 		if (i == selectedSegment) {

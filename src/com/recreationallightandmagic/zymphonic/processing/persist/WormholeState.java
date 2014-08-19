@@ -6,7 +6,8 @@ import com.recreationallightandmagic.zymphonic.processing.input.DepthRegion;
 
 public class WormholeState {
 
-	public List<DepthRegion> regions;
+	public List<DepthRegion> regions1;
+	public List<DepthRegion> regions2;
 
 	
 }
